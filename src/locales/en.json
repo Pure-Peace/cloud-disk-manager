@@ -1,0 +1,24 @@
+{
+  "welcome": "Welcome to the world of Electron-Vue!",
+  "localeChangerTitle": "Language:",
+  "a message": "Hello, i'm rendering process!",
+  "Click Me!": "cLiCk mE!!",
+  "reciveFromRenderer": "Received a message from the rendering process！",
+  "trayMenu": {
+    "reset": "Show main window",
+    "openDialog": "Open dialog",
+    "openLink": "Open link",
+    "exit": "Quit",
+    "dialog": {
+      "title": "You see me!",
+      "message": "As you can see, I am a multi-language dialog:",
+      "detail": "By the way, when you directly click the close button on the main window, the program does not exit completely. If you want to exit completely, select Exit in the system tray menu."
+    }
+  },
+  "requestDemo": {
+    "ready": "Send request",
+    "requesting": "requesting...",
+    "requestSuccess": "succeeded!",
+    "requestFail": "failed"
+  }
+}

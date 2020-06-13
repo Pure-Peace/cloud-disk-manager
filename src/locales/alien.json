@@ -1,0 +1,10 @@
+{
+  "welcome": " ♪（＾∀＾●）ﾉｼ （●´∀｀）♪",
+  "localeChangerTitle": "( ͡° ͜ʖ ͡°):",
+  "a message": "_(:з」∠)_ _(:qゝ∠)_ _(?ω?｣ ∠)_",
+  "Click Me!": "(,,•́ . •̀,,) ",
+  "no-tray-menu": {
+    "why-zh": "这是一个演示demo：如果无法再指定语言的翻译文件中找到相关内容，翻译器将自动选择备用语言进行翻译（如英语）。",
+    "why-eg": "This is a demo: if the relevant content cannot be found in the translation file in the specified language, the translator will automatically select an alternate language for translation (such as English)."
+  }
+}

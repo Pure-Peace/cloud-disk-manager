@@ -1,0 +1,57 @@
+/* default theme */
+
+@white: #FAFAFA;
+@black: #222223;
+@default-text-color: @black;
+@default-background-color: @white;
+@primary: #5e72e4;
+@circle-button-color: #7A94FF;
+@circle-button-background: @white;
+
+a { color: @default-text-color; }
+
+button { color: @primary; }
+
+::selection {
+    color: #fff;
+    background: @primary;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #898989;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #4A4A4A;
+}
+
+::-webkit-scrollbar-track {
+    background: #ccc;
+}
+
+/* topbar.vue */
+
+#topbar-box {
+    background-color: @primary;
+    color: @white;
+}
+
+
+// app
+#app {
+    background-color: @primary;
+    color: @default-text-color;
+}
+
+#app-router-view {
+    background-color: @default-background-color;
+}
+
+
+// leftbar.vue
+
+#leftbar-box {
+    background-color: @primary;
+    color: @white;
+}
+
