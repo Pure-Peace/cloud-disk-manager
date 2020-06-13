@@ -43,7 +43,7 @@ button:hover {
     color: @circle-button-background;
     background-color: @circle-button-color;
     .svg-icon {
-        transform: rotate(60deg);
+        transform: rotate(10deg);
     }
 }
 
