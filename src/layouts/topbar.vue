@@ -14,16 +14,16 @@
     <div id="topbar-action-box">
       <control-button
         icon-class="button-hidden"
-        @click.native="win.minimize()"
+        @click="win.minimize()"
       />
       <control-button
         icon-class="button-fullsize"
-        @click.native="!win.isMaximized() ? win.maximize() : win.restore()"
+        @click="!win.isMaximized() ? win.maximize() : win.restore()"
       />
       <control-button
         icon-class="button-exit"
         type="warning"
-        @click.native="win.close()"
+        @click="win.close()"
       />
     </div>
   </div>

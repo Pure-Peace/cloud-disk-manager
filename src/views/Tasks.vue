@@ -4,34 +4,23 @@
       <div
         style="border-radius: 8px 0 0 0; font-size: 20px; padding: 20px; color: #292929; user-select: none;"
       >
-        主页
-        <span style="font-size: 12px;">/ Home</span>
+        任务
+        <span style="font-size: 12px;">/ Tasks</span>
       </div>
       <div />
     </div>
     <div style="flex: 1; padding: 20px;">
-      <div style="text-align: center; font-size: 26px; font-weight: lighter; padding: 20px;">
-        请选择一个服务
-      </div>
-      <div class="service-box">
-        <service-item
-          v-for="(item, idx) in $bus.serviceList"
-          :key="idx"
-          :service="item"
-        />
-      </div>
+      WIP
     </div>
   </div>
 </template>
 
 <script>
-import serviceItem from '@/components/serviceItem.vue'
 
 const ipc = require('electron').ipcRenderer
 
 export default {
   components: {
-    serviceItem
   },
   data () {
     return {}

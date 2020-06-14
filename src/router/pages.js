@@ -1,5 +1,7 @@
 import Home from 'views/Home.vue'
-import About from 'views/About.vue'
+import Settings from 'views/Settings.vue'
+import Tasks from 'views/Tasks.vue'
+import Dir from 'views/Dir.vue'
 
 export default [
   {
@@ -8,13 +10,18 @@ export default [
     component: Home
   },
   {
-    path: '/about',
-    name: 'About',
-    component: About
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    // 懒加载
-    // component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
+    path: '/dir',
+    name: 'Dir',
+    component: Dir
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: Settings
+  },
+  {
+    path: '/Tasks',
+    name: 'Tasks',
+    component: Tasks
   }
 ]

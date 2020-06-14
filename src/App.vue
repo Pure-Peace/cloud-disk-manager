@@ -8,7 +8,9 @@
       id="app-content"
       :style="`height: calc(100% - ${$bus.topbarHeight}px);`"
     >
+      <custom-modal name="global-modal" />
       <leftbar :win="win" />
+
       <router-view id="app-router-view" />
       <!--locale-changer style="position: fixed; right: 30px; top: 50px;" /-->
     </div>
@@ -17,6 +19,7 @@
 
 <script>
 import { remote } from 'electron'
+import customModal from '@/components/customModal.vue'
 import topbar from '@/layouts/topbar.vue'
 import leftbar from '@/layouts/leftbar.vue'
 // import localeChanger from 'components/localeChanger'
@@ -25,7 +28,8 @@ export default {
   components: {
     // localeChanger,
     topbar,
-    leftbar
+    leftbar,
+    customModal
   },
   data () {
     return {

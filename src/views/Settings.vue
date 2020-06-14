@@ -1,6 +1,6 @@
 <template>
   <div style="text-align: center; ">
-    fuck off
+    WIP
   </div>
 </template>
 

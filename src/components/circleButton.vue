@@ -1,5 +1,8 @@
 <template>
-  <button :class="buttonStyle">
+  <button
+    :class="buttonStyle"
+    @click="handleClick"
+  >
     <svg-icon :icon-class="icon" />
   </button>
 </template>
@@ -8,7 +11,7 @@
 export default {
   props: {
     icon: {
-      default: 'setting',
+      default: '',
       type: String
     },
     type: {
@@ -21,6 +24,11 @@ export default {
       let style = ''
       if (this.type === 'shadow') style += 'shadow-button'
       return style
+    }
+  },
+  methods: {
+    handleClick (e) {
+      this.$emit('click', e)
     }
   }
 

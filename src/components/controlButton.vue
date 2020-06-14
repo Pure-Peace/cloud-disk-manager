@@ -1,5 +1,8 @@
 <template>
-  <button :class="buttonStyle">
+  <button
+    :class="buttonStyle"
+    @click="handleClick"
+  >
     <svg-icon
       :icon-class="iconClass"
     />
@@ -23,6 +26,11 @@ export default {
       let style = ''
       if (this.type === 'warning') style += 'warning-button'
       return style
+    }
+  },
+  methods: {
+    handleClick (e) {
+      this.$emit('click', e)
     }
   }
 }

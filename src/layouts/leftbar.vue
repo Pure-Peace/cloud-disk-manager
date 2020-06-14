@@ -6,19 +6,19 @@
     <div class="leftbar-topline" />
     <div class="leftbar-top-menu">
       <circle-button
-        icon="cloud-outline"
-        @click.native="changePage()"
+        v-for="(item, idx) in $bus.leftbarTopMenuItems"
+        :key="idx"
+        :icon="item.icon"
+        @click="item.handle(self, item)"
       />
-      <circle-button icon="list" />
     </div>
     <div class="leftbar-bottom-menu">
       <circle-button
-        icon="setting"
+        v-for="(item, idx) in $bus.leftbarBottomMenuItems"
+        :key="idx"
+        :icon="item.icon"
         type="shadow"
-      />
-      <circle-button
-        icon="info"
-        type="shadow"
+        @click="item.handle(self, item)"
       />
     </div>
   </div>
@@ -37,10 +37,13 @@ export default {
       type: Object
     }
   },
-  methods: {
-    changePage (pageName) {
-      this.$router.push({ name: pageName })
+  data: function () {
+    return {
+      self: this
     }
+  },
+  methods: {
+
   }
 
 }
