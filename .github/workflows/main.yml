@@ -1,0 +1,29 @@
+name: Build/release
+
+on:
+  push:
+    tags:
+      - 'release*'
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-2019]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 13
+      - name: Build/release Electron app
+        env:
+          GH_TOKEN: ${{ secrets.github_token }}
+        run: |
+          npm install
+          npm run packapp --publish always
