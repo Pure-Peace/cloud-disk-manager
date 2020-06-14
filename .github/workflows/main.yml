@@ -26,4 +26,4 @@ jobs:
           GH_TOKEN: ${{ secrets.github_token }}
         run: |
           npm install
-          npm run electron:build --publish always
+          npm run packapp --publish=always
