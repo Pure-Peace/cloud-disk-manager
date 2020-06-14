@@ -1,6 +1,6 @@
 <template>
   <div style="text-align: center;">
-    ok sir
+    <h2>TEST GITHUB ACTIONS</h2>
   </div>
 </template>
 
