@@ -2,7 +2,7 @@
 
 ## WORK IN PROGRESS
 
-
+![logo](http://otsu.fun/demos4/logo.png)
 
 
 ---
