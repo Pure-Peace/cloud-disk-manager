@@ -33,6 +33,7 @@ module.exports = {
   },
   pluginOptions: {
     electronBuilder: {
+      nodeIntegration: true,
       builderOptions: {
         win: {
           icon: './public/app.ico'
@@ -40,7 +41,7 @@ module.exports = {
         mac: {
           icon: './public/app.png'
         },
-        productName: 'vue-cli-electron-template'
+        productName: 'Cloud Disk Manager'
       }
     },
     // i18n config

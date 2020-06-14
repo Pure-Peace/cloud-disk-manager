@@ -34,9 +34,7 @@ class MainWindow {
         minWidth: 1100,
         minHeight: 770,
         webPreferences: {
-          // 设为false允许跨域
-          webSecurity: false,
-          nodeIntegration: true
+          nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION
         },
         // eslint-disable-next-line no-undef
         icon: `${__static}/app.ico`,
