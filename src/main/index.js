@@ -10,6 +10,4 @@ import AppManager from './managers/appManager'
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }])
 
-const app = new AppManager()
-
-export default app
+global.appManager = new AppManager()

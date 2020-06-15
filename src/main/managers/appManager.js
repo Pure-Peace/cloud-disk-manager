@@ -4,7 +4,7 @@ import { Tray } from 'electron'
 import EventManager from '../events'
 import WindowManager from './windowManager'
 import MenuManager from '../menus'
-import SubServiceManager from './SubServiceManager'
+import SubServiceManager from './subServiceManager'
 
 // plugins
 import Translator from '../plugins/translator'

@@ -1,8 +1,10 @@
-import { app } from 'electron'
+import { app, protocol } from 'electron'
 
 class AppEvents {
   constructor () {
     this.development = process.env.NODE_ENV !== 'production'
+    // Scheme must be registered before the app is ready
+    protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }])
   }
 
   create (appManager) {

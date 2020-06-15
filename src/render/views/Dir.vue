@@ -38,13 +38,13 @@ export default {
   },
   created () {
     this.currentLocalDir = this.$bus.appGetPath('desktop')
+    console.log(this.$bus.emit('gg'))
   },
   methods: {
     getNewWatcher () {
       this.watcher = chokidar.watch(this.currentLocalDir, { depth: 0 })
         .on('all', (e, path) => {
-          log(e, path)
-          log(this.watcher)
+          // log(e, path)
         })
     }
   }

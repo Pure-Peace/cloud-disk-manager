@@ -2,6 +2,7 @@ const install = (Vue, options) => {
   const Bus = new Vue({
     data () {
       return {
+        appManager: this.getAppManager(),
         router: options.router,
         appName: 'Cloud Disk Manager',
         topbarHeight: 70,
@@ -53,6 +54,9 @@ const install = (Vue, options) => {
       }
     },
     methods: {
+      getAppManager () {
+        return this.$electron.remote.getGlobal('appManager')
+      },
       appGetPath (pathName = 'desktop') {
         return this.$electron.remote.app.getPath(pathName)
       },
