@@ -11,7 +11,8 @@ const fs = require('fs')
 export default {
   data () {
     return {
-      currentLocalDir: this.$bus.appGetPath('desktop')
+      firstActivated: true,
+      currentLocalDir: ''
     }
   },
   computed: {
@@ -19,8 +20,22 @@ export default {
       return fs.readdirSync(this.currentLocalDir)
     }
   },
-  mounted () {
-    console.log()
+  activated () {
+    if (this.firstActivated) this.onFirstOpenHandler()
+    else this.onOpenHandler()
+  },
+  created () {
+    console.log('start initial Dir page...')
+    this.currentLocalDir = this.$bus.appGetPath('desktop')
+  },
+  methods: {
+    onFirstOpenHandler () {
+      console.log('fist open')
+      this.firstActivated = false
+    },
+    onOpenHandler () {
+      console.log('open')
+    }
   }
 }
 </script>
