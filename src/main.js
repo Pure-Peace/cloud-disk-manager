@@ -17,25 +17,14 @@ import '@/themes/global.less'
 import '@/themes/light.less'
 
 Vue.use(VModal)
+Vue.use(VueBus, { router })
 
-Vue.use(VueBus)
 Vue.component('svg-icon', SvgIcon)
+
 Vue.prototype.$backend = $backend
 Vue.prototype.$electron = require('electron')
+
 Vue.config.productionTip = false
-
-// Navigation guard (interceptor) , executes code before each jump of the router
-// 导航守卫（拦截器），在router每次跳转前执行
-router.beforeEach((to, from, next) => {
-  // code
-  next()
-})
-
-// executes code every time a jump is completed
-// 在router每次跳转完成后执行
-router.afterEach(() => {
-  // code
-})
 
 new Vue({
   router,

@@ -1,7 +1,8 @@
-const install = (Vue) => {
+const install = (Vue, options) => {
   const Bus = new Vue({
     data () {
       return {
+        router: options.router,
         appName: 'Cloud Disk Manager',
         topbarHeight: 70,
         leftbarWidth: 80,
@@ -58,8 +59,8 @@ const install = (Vue) => {
       modal (item) {
         this.$modal.show('global-modal', { type: item.modalType })
       },
-      changePage (item, that) {
-        that.$router.push({ name: item.name })
+      changePage (item) {
+        this.router.push({ name: item.name })
       },
       emit (event, ...args) {
         this.$emit(event, ...args)

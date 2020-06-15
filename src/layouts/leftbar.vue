@@ -9,7 +9,7 @@
         v-for="(item, idx) in $bus.leftbarTopMenuItems"
         :key="idx"
         :icon="item.icon"
-        @click="item.handle(item, self)"
+        @click="item.handle(item)"
       />
     </div>
     <div class="leftbar-bottom-menu">
@@ -18,7 +18,7 @@
         :key="idx"
         :icon="item.icon"
         type="shadow"
-        @click="item.handle(item, self)"
+        @click="item.handle(item)"
       />
     </div>
   </div>
