@@ -2,6 +2,7 @@ const install = (Vue, options) => {
   const Bus = new Vue({
     data () {
       return {
+        process,
         getWindow: Function,
         getSubService: Function,
         appManager: Object,

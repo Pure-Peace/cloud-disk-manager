@@ -1,5 +1,17 @@
 <template>
-  <div>this is chokidar service!</div>
+  <div style="padding: 20px 50px;">
+    <h1>This is chokidar service!</h1>
+    <h2 :style="statusColor">
+      Status: {{ status }}
+    </h2>
+    <h3>createdTime: {{ $moment(createdTime).format('YYYY-MM-DD HH:mm:ss') }}</h3>
+    <h3>totalSend: {{ totalSend }}</h3>
+    <h3>totalRecived: {{ totalRecived }}</h3>
+    <h3>totalError: {{ totalError }}</h3>
+    <h3>servicesCompleted: {{ servicesCompleted }}</h3>
+    <h3>clients: {{ Object.keys(clients) }}</h3>
+    <h3>client counts: {{ Object.keys(clients).length }}</h3>
+  </div>
 </template>
 
 <script>
@@ -9,10 +21,12 @@ const log = utils.log
 export default {
   data () {
     return {
+      status: 'STOPPED',
       createdTime: Date.now(),
       totalSend: 0,
       totalRecived: 0,
       totalError: 0,
+      servicesCompleted: 0,
       clients: {},
       handlers: [
         {
@@ -22,6 +36,11 @@ export default {
           }
         }
       ]
+    }
+  },
+  computed: {
+    statusColor () {
+      return `color: ${this.status === 'RUNNING' ? 'green' : 'red'};`
     }
   },
   created () {
@@ -36,6 +55,7 @@ export default {
       })
     )
     this.createdTime = Date.now()
+    this.status = 'RUNNING'
     log('chokidar service is ready!')
   },
   methods: {

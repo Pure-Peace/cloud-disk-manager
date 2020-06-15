@@ -22,27 +22,52 @@ export default class chokidarService {
       createProtocol('app')
       this.win.loadURL('app://./chokidar.html' + subServiceParams)
     }
-
-    this.win.on('closed', () => {
-      this.win = null
-    })
   }
 
   createWindow () {
     if (!this.win) {
-      this.win = new BrowserWindow({
-        width: 1100,
-        height: 770,
-        minWidth: 1100,
-        minHeight: 770,
+      const win = new BrowserWindow({
+        width: 460,
+        height: 500,
+        minWidth: 460,
+        minHeight: 500,
+        maxWidth: 460,
+        maxHeight: 500,
+        x: 0,
+        y: 0,
+        resizable: false,
         webPreferences: {
           nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION
         },
         // eslint-disable-next-line no-undef
         icon: `${__static}/app.ico`,
-        frame: false
+        frame: true,
+        show: process.env.IS_TEST,
+        closable: false,
+        fullscreenable: false,
+        fullscreen: false,
+        // skipTaskbar: true,
+        alwaysOnTop: true,
+        paintWhenInitiallyHidden: false,
+        titleBarStyle: 'hiddenInset'
       })
 
+      win.once('ready-to-show', () => {
+        win.hide()
+      })
+
+      win.on('close', (e) => {
+        win.setTitle('Essential services can not be closed! Cloud Disk Manager')
+        e.preventDefault()
+        e.returnValue = false
+        return false
+      })
+
+      win.on('closed', () => {
+        this.win = null
+      })
+
+      this.win = win
       // 初始化浏览器页面
       this.initBrowserPage()
     }

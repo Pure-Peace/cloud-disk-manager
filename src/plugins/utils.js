@@ -1,7 +1,9 @@
 import moment from 'moment'
+const IS_PROD = process.env.NODE_ENV === 'production'
+const enableLog = false
 
 export default {
-  moment,
+  moment: () => moment,
   parseUrlSearch: urlSearch => {
     let result = {}
     try {
@@ -25,6 +27,6 @@ export default {
     return arr.join('&')
   },
   log: text => {
-    console.log(`[${moment().format('YYYY-MM-DD HH:mm:ss')}] ${text}`)
+    if (!IS_PROD && enableLog) console.log(`[${moment().format('YYYY-MM-DD HH:mm:ss')}] ${text}`)
   }
 }

@@ -20,19 +20,16 @@ class MainWindow {
       createProtocol('app')
       this.win.loadURL('app://./index.html')
     }
-
-    this.win.on('closed', () => {
-      this.win = null
-    })
   }
 
   createWindow () {
     if (!this.win) {
-      this.win = new BrowserWindow({
+      const win = new BrowserWindow({
         width: 1100,
         height: 770,
         minWidth: 1100,
         minHeight: 770,
+        show: false,
         webPreferences: {
           nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION
         },
@@ -40,6 +37,16 @@ class MainWindow {
         icon: `${__static}/app.ico`,
         frame: false
       })
+
+      win.once('ready-to-show', () => {
+        win.show()
+      })
+
+      win.on('closed', () => {
+        this.win = null
+      })
+
+      this.win = win
 
       // 初始化浏览器页面
       this.initBrowserPage()
