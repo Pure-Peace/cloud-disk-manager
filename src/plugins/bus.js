@@ -2,7 +2,8 @@ const install = (Vue, options) => {
   const Bus = new Vue({
     data () {
       return {
-        appManager: this.getAppManager(),
+        getSubService: Function,
+        appManager: Object,
         router: options.router,
         appName: 'Cloud Disk Manager',
         topbarHeight: 70,
@@ -52,6 +53,11 @@ const install = (Vue, options) => {
           }
         ]
       }
+    },
+    created () {
+      const appManager = this.getAppManager()
+      this.appManager = appManager
+      this.getSubService = appManager.getSubService
     },
     methods: {
       getAppManager () {

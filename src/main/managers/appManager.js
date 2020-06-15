@@ -34,9 +34,13 @@ class AppManager {
   // 初始化app，创建窗口及托盘
   // Initialize the app, create windows and tray
   initApp () {
-    this.subServiceManager.createAll()
     this.windowManager.createAll()
+    this.subServiceManager.createAll()
     this.createAppTray()
+  }
+
+  getSubService (serviceName) {
+    return this.subServiceManager[serviceName]
   }
 
   languageChange (lang) {
