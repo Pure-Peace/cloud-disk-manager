@@ -1,12 +1,12 @@
 <template>
   <div id="app">
+    <custom-modal name="global-modal" />
     <topbar ref="topbar" />
     <div
       id="app-content"
       :style="appContentHeight"
     >
-      <custom-modal name="global-modal" />
-      <leftbar />
+      <leftbar ref="leftbar" />
       <router-view id="app-router-view" />
       <!--locale-changer style="position: fixed; right: 30px; top: 50px;" /-->
     </div>
