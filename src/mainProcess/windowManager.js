@@ -1,4 +1,4 @@
-import MainWindow from './mainWindow'
+import MainWindow from './windows/mainWindow'
 
 class WindowManager {
   constructor () {

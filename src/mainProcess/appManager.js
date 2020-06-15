@@ -2,7 +2,8 @@ import { Tray } from 'electron'
 
 // management
 import EventManager from './events'
-import WindowManager from './windows'
+import WindowManager from './windowManager'
+import SubServiceManager from './SubServiceManager'
 import MenuManager from './menus'
 
 // plugins
@@ -17,6 +18,10 @@ class AppManager {
     // Window manager, mainly responsible for managing and creating windows
     this.windowManager = new WindowManager(this)
 
+    // subService: Rendering process created to reduce the burden on the process.
+    // Essentially the same as the general'broswer window' object, only used for background operations, not visible.
+    this.subServiceManager = new SubServiceManager(this)
+
     // 菜单管理器，主要负责获取菜单对象
     // Menu manager, mainly responsible for get the menu object
     this.menuManager = new MenuManager(this)
@@ -29,6 +34,7 @@ class AppManager {
   // 初始化app，创建窗口及托盘
   // Initialize the app, create windows and tray
   initApp () {
+    this.subServiceManager.createAll()
     this.windowManager.createAll()
     this.createAppTray()
   }

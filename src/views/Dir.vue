@@ -7,12 +7,15 @@
 
 <script>
 const fs = require('fs')
+const chokidar = require('chokidar')
+const log = console.log.bind(console)
 
 export default {
   data () {
     return {
       firstActivated: true,
-      currentLocalDir: ''
+      currentLocalDir: undefined,
+      watcher: undefined
     }
   },
   computed: {
@@ -20,21 +23,29 @@ export default {
       return fs.readdirSync(this.currentLocalDir)
     }
   },
+  watch: {
+    currentLocalDir: {
+      handler: function (current, before) {
+        log('change dir', before, ' -> ', current)
+        this.getNewWatcher()
+      }
+    }
+  },
   activated () {
-    if (this.firstActivated) this.onFirstOpenHandler()
-    else this.onOpenHandler()
+    if (this.firstActivated) { this.firstActivated = false } else {
+
+    }
   },
   created () {
-    console.log('start initial Dir page...')
     this.currentLocalDir = this.$bus.appGetPath('desktop')
   },
   methods: {
-    onFirstOpenHandler () {
-      console.log('fist open')
-      this.firstActivated = false
-    },
-    onOpenHandler () {
-      console.log('open')
+    getNewWatcher () {
+      this.watcher = chokidar.watch(this.currentLocalDir, { depth: 0 })
+        .on('all', (e, path) => {
+          log(e, path)
+          log(this.watcher)
+        })
     }
   }
 }
