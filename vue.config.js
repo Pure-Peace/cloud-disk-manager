@@ -1,17 +1,27 @@
 const path = require('path')
+const IS_PROD = process.env.NODE_ENV === 'production'
 
 function resolve (dir) {
   return path.join(__dirname, dir)
 }
 
 module.exports = {
+  pages: {
+    app: {
+      title: 'Cloud Disk Manager',
+      entry: 'src/render/index.js',
+      template: 'public/index.html',
+      filename: 'index.html'
+    }
+  },
   publicPath: './',
   assetsDir: 'assets',
   outputDir: 'dist',
+  productionSourceMap: !IS_PROD,
   devServer: {
     // can be overwritten by process.env.HOST
-    host: '0.0.0.0',
-    port: 7895
+    host: 'localhost',
+    port: 8080
   },
   chainWebpack: config => {
     // 路径别名，如用“@”指代“src”等
@@ -19,10 +29,18 @@ module.exports = {
     config.resolve.alias
       .set('@', resolve('src'))
       .set('src', resolve('src'))
-      .set('static', resolve('src/assets'))
-      .set('views', resolve('src/views'))
+      .set('plugins', resolve('src/plugins'))
       .set('svg', resolve('src/assets/svg'))
-      .set('components', resolve('src/components'))
+      .set('locale', resolve('src/locale'))
+      .set('backend', resolve('src/backend'))
+      .set('render', resolve('src/render'))
+      .set('main', resolve('src/main'))
+      .set('mainServices', resolve('src/render/mainServices'))
+      .set('subServices', resolve('src/render/subServices'))
+      .set('views', resolve('src/render/views'))
+      .set('themes', resolve('src/render/themes'))
+      .set('components', resolve('src/render/components'))
+      .set('layouts', resolve('src/render/layouts'))
     // svg config
     const svgRule = config.module.rule('svg')
     svgRule.uses.clear()
@@ -33,6 +51,8 @@ module.exports = {
   },
   pluginOptions: {
     electronBuilder: {
+      mainProcessFile: 'src/main/index.js',
+      mainProcessWatch: ['src/main'],
       nodeIntegration: true,
       builderOptions: {
         win: {

@@ -6,7 +6,7 @@ Vue.use(VueI18n)
 // 读取语言文件夹下所有的翻译文件及内容
 // Read all translation files and content in the language folder
 function loadLocaleMessages () {
-  const locales = require.context('./locales', true, /[A-Za-z0-9-_,\s]+\.json$/i)
+  const locales = require.context('../locales', true, /[A-Za-z0-9-_,\s]+\.json$/i)
   const messages = {}
   locales.keys().forEach(key => {
     const matched = key.match(/([A-Za-z0-9-_]+)\./i)

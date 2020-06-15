@@ -5,7 +5,7 @@
 import { protocol } from 'electron'
 
 // AppManager负责管理整个app / AppManager is responsible for managing the entire app
-import AppManager from './mainProcess/appManager'
+import AppManager from './managers/appManager'
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }])

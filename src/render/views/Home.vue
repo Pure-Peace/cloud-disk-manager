@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import serviceItem from '@/components/serviceItem.vue'
+import serviceItem from 'components/serviceItem.vue'
 
 const ipc = require('electron').ipcRenderer
 

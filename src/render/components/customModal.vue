@@ -21,7 +21,7 @@
 </template>
 
 <script>
-import appAbout from '@/components/modalContents/appAbout.vue'
+import appAbout from 'components/modalContents/appAbout.vue'
 
 export default {
   components: {

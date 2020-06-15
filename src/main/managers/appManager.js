@@ -1,13 +1,13 @@
 import { Tray } from 'electron'
 
 // management
-import EventManager from './events'
+import EventManager from '../events'
 import WindowManager from './windowManager'
+import MenuManager from '../menus'
 import SubServiceManager from './SubServiceManager'
-import MenuManager from './menus'
 
 // plugins
-import Translator from './plugins/translator'
+import Translator from '../plugins/translator'
 
 class AppManager {
   constructor () {

@@ -25,9 +25,9 @@
 </template>
 
 <script>
-import customModal from '@/components/customModal.vue'
-import topbar from '@/layouts/topbar.vue'
-import leftbar from '@/layouts/leftbar.vue'
+import customModal from 'components/customModal.vue'
+import topbar from 'layouts/topbar.vue'
+import leftbar from 'layouts/leftbar.vue'
 // import localeChanger from 'components/localeChanger'
 
 export default {

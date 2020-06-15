@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import controlButton from '@/components/controlButton.vue'
+import controlButton from 'components/controlButton.vue'
 
 export default {
   components: {

@@ -1,4 +1,4 @@
-import ChokidarService from './subservices/chokidarService'
+import ChokidarService from '../subServices/chokidarService'
 
 class subServiceManager {
   constructor () {

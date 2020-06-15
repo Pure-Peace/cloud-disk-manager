@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import circleButton from '@/components/circleButton.vue'
+import circleButton from 'components/circleButton.vue'
 
 export default {
   components: {
