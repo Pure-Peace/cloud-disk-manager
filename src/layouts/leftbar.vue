@@ -31,15 +31,9 @@ export default {
   components: {
     circleButton
   },
-  props: {
-    win: {
-      default: () => {},
-      type: Object
-    }
-  },
-  data: function () {
+  data () {
     return {
-      self: this
+      win: this.$electron.remote.getCurrentWindow()
     }
   },
   methods: {

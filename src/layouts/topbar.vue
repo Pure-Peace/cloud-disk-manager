@@ -36,14 +36,9 @@ export default {
   components: {
     controlButton
   },
-  props: {
-    win: {
-      default: () => {},
-      type: Object
-    }
-  },
   data () {
     return {
+      win: this.$electron.remote.getCurrentWindow()
     }
   },
   methods: {

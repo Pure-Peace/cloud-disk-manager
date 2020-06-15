@@ -1,16 +1,12 @@
 <template>
   <div id="app">
-    <topbar
-      ref="topbar"
-      :win="win"
-    />
+    <topbar ref="topbar" />
     <div
       id="app-content"
-      :style="`height: calc(100% - ${$bus.topbarHeight}px);`"
+      :style="appContentHeight"
     >
       <custom-modal name="global-modal" />
-      <leftbar :win="win" />
-
+      <leftbar />
       <router-view id="app-router-view" />
       <!--locale-changer style="position: fixed; right: 30px; top: 50px;" /-->
     </div>
@@ -18,7 +14,6 @@
 </template>
 
 <script>
-import { remote } from 'electron'
 import customModal from '@/components/customModal.vue'
 import topbar from '@/layouts/topbar.vue'
 import leftbar from '@/layouts/leftbar.vue'
@@ -33,7 +28,11 @@ export default {
   },
   data () {
     return {
-      win: remote.getCurrentWindow()
+    }
+  },
+  computed: {
+    appContentHeight () {
+      return `height: calc(100% - ${this.$bus.topbarHeight}px);`
     }
   },
   mounted () {
