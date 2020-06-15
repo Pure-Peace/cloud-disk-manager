@@ -36,6 +36,8 @@ export default {
   data () {
     return {}
   },
+  mounted () {
+  },
   methods: {
     openDialogByRemote () {
       const { dialog } = require('electron').remote

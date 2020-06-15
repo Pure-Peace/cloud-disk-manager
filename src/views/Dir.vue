@@ -1,13 +1,26 @@
 <template>
-  <div>WIP</div>
+  <div>
+    <div>{{ currentLocalDir }}</div>
+    <div>{{ currentLocalDirFiles }}</div>
+  </div>
 </template>
 
 <script>
-// const fs = require('fs')
+const fs = require('fs')
 
 export default {
+  data () {
+    return {
+      currentLocalDir: this.$bus.appGetPath('desktop')
+    }
+  },
+  computed: {
+    currentLocalDirFiles () {
+      return fs.readdirSync(this.currentLocalDir)
+    }
+  },
   mounted () {
-    console.log(this.$bus.appGetPath())
+    console.log()
   }
 }
 </script>

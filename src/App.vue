@@ -7,7 +7,18 @@
       :style="appContentHeight"
     >
       <leftbar ref="leftbar" />
-      <router-view id="app-router-view" />
+
+      <keep-alive>
+        <router-view
+          v-if="$route.meta.keepAlive"
+          id="app-router-view"
+        />
+      </keep-alive>
+      <router-view
+        v-if="!$route.meta.keepAlive"
+        id="app-router-view"
+      />
+
       <!--locale-changer style="position: fixed; right: 30px; top: 50px;" /-->
     </div>
   </div>

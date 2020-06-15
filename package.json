@@ -15,8 +15,11 @@
   "main": "background.js",
   "dependencies": {
     "basic-ftp": "^4.6.0",
+    "chokidar": "^3.4.0",
     "core-js": "^3.6.4",
+    "install": "^0.13.0",
     "moment": "^2.26.0",
+    "npm": "^6.14.5",
     "svg-sprite-loader": "^4.2.1",
     "vue": "^2.6.11",
     "vue-i18n": "^8.15.5",

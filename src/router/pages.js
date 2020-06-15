@@ -12,7 +12,10 @@ export default [
   {
     path: '/dir',
     name: 'Dir',
-    component: Dir
+    component: Dir,
+    meta: {
+      keepAlive: true
+    }
   },
   {
     path: '/settings',
