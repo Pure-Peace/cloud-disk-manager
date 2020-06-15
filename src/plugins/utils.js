@@ -1,6 +1,6 @@
 import moment from 'moment'
 const IS_PROD = process.env.NODE_ENV === 'production'
-const enableLog = false
+const enableLog = true
 
 export default {
   moment: () => moment,

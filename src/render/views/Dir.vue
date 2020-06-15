@@ -1,18 +1,33 @@
 <template>
   <div>
-    <div>{{ currentLocalDir }}</div>
-    <div>{{ currentLocalDirFiles }}</div>
+    <div v-if="chokidarTaskProcessing">
+      chokidar service loading...
+      <custom-button @click="closeWatcher">
+        cancel
+      </custom-button>
+    </div>
+    <div v-else>
+      <div>{{ currentLocalDir }}</div>
+      <div>{{ currentLocalDirFiles }}</div>
+    </div>
   </div>
 </template>
 
 <script>
+import customButton from 'components/customButton.vue'
+import utils from 'plugins/utils'
 const fs = require('fs')
-const chokidar = require('chokidar')
-const log = console.log.bind(console)
+const log = utils.log
 
 export default {
+  components: {
+    customButton
+  },
   data () {
     return {
+      chokidarTaskProcessing: true,
+      chokidarReady: false,
+      chokidarStatus: false,
       chokidarService: Object,
       firstActivated: true,
       currentLocalDir: undefined,
@@ -33,33 +48,46 @@ export default {
     }
   },
   activated () {
-    this.sendTo(this.chokidarService.win.id, 'status', 'hello')
-
+    this.currentLocalDir = this.$bus.appGetPath('desktop')
     if (this.firstActivated) { this.firstActivated = false } else {
-
+      this.sendTo(this.chokidarService.win.id, 'test', '')
     }
   },
   created () {
-    this.currentLocalDir = this.$bus.appGetPath('desktop')
     const chokidarService = this.$bus.getSubService('chokidarService')
     this.chokidarService = chokidarService
+    this.addEvent('chokidarStatus', (e, arg) => {
+      if (arg === 'RUNNING') this.chokidarStatus = true
+      log(`chokidar is ${arg} now!`)
+    })
+    this.addEvent('chokidarResults', (e, arg) => {
+      if (arg.status === 1) this.chokidarTaskProcessing = true
+      console.log('chokidarResults:', arg)
+    })
+    this.addEvent('chokidarTaskProcessComplete', (e, arg) => {
+      console.log('chokidarTaskProcessComplete:', arg)
+      this.chokidarTaskProcessing = false
+    })
   },
   methods: {
     getNewWatcher () {
-      this.watcher = chokidar.watch(this.currentLocalDir, { depth: 0 })
-        .on('all', (e, path) => {
-          // log(e, path)
-        })
+      if (this.currentLocalDir && this.currentLocalDir !== '') {
+        console.log(this.currentLocalDir)
+        this.sendTo(this.chokidarService.win.id, 'test', this.currentLocalDir)
+      }
     },
-    sendTo (electronId, channel, data = 'hello') {
+    sendTo (electronId, channel, data = '') {
       this.$electron.ipcRenderer.sendTo(electronId, channel, data)
       this.totalSend += 1
-      log(`#${this.totalSend}: send a message to channel [${channel}](#${electronId})`)
+      log(`send a message to channel [${channel}](#${electronId})`)
     },
     addEvent (event, handler) {
       this.$electron.ipcRenderer.removeAllListeners(event)
       this.$electron.ipcRenderer.on(event, handler)
       log(`added event [${event}]!`)
+    },
+    closeWatcher () {
+      this.sendTo(this.chokidarService.win.id, 'stopTaskProcess', '')
     }
   }
 }
