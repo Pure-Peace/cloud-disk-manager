@@ -52,11 +52,14 @@ const install = (Vue) => {
       }
     },
     methods: {
-      modal (self, item) {
-        self.$modal.show('global-modal', { type: item.modalType })
+      appGetPath (pathName = 'desktop') {
+        return this.$electron.remote.app.getPath(pathName)
       },
-      changePage (self, item) {
-        self.$router.push({ name: item.name })
+      modal (item) {
+        this.$modal.show('global-modal', { type: item.modalType })
+      },
+      changePage (item, that) {
+        that.$router.push({ name: item.name })
       },
       emit (event, ...args) {
         this.$emit(event, ...args)
