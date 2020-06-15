@@ -2,6 +2,7 @@ const install = (Vue, options) => {
   const Bus = new Vue({
     data () {
       return {
+        getWindow: Function,
         getSubService: Function,
         appManager: Object,
         router: options.router,
@@ -58,6 +59,7 @@ const install = (Vue, options) => {
       const appManager = this.getAppManager()
       this.appManager = appManager
       this.getSubService = appManager.getSubService
+      this.getWindow = appManager.getWindow
     },
     methods: {
       getAppManager () {

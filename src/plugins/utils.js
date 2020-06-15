@@ -1,4 +1,7 @@
+import moment from 'moment'
+
 export default {
+  moment,
   parseUrlSearch: urlSearch => {
     let result = {}
     try {
@@ -20,5 +23,8 @@ export default {
       }
     }
     return arr.join('&')
+  },
+  log: text => {
+    console.log(`[${moment().format('YYYY-MM-DD HH:mm:ss')}] ${text}`)
   }
 }

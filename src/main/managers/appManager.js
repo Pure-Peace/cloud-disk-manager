@@ -39,6 +39,10 @@ class AppManager {
     this.createAppTray()
   }
 
+  getWindow (windowName) {
+    return this.windowManager[windowName]
+  }
+
   getSubService (serviceName) {
     return this.subServiceManager[serviceName]
   }

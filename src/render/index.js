@@ -11,8 +11,9 @@ import Chokidar from 'render/Chokidar.vue'
 
 // custom plugins
 import VModal from 'vue-js-modal'
+import moment from 'moment'
 import utils from 'plugins/utils'
-import $backend from 'backend/resources'
+import backend from 'backend/resources'
 import SvgIcon from 'components/svgIcon/index.vue'
 import 'components/svgIcon'
 
@@ -54,7 +55,8 @@ Vue.config.productionTip = false
 Vue.use(VModal)
 Vue.use(VueBus, { router })
 Vue.component('svg-icon', SvgIcon)
-Vue.prototype.$backend = $backend
+Vue.prototype.$backend = backend
+Vue.prototype.$moment = moment
 
 const params = utils.parseUrlSearch(window.location.search)
 params && params.subservice ? initSubService() : initApp()

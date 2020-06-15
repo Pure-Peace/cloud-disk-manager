@@ -13,6 +13,7 @@ const log = console.log.bind(console)
 export default {
   data () {
     return {
+      chokidarService: Object,
       firstActivated: true,
       currentLocalDir: undefined,
       watcher: undefined
@@ -32,13 +33,16 @@ export default {
     }
   },
   activated () {
+    this.sendTo(this.chokidarService.win.id, 'status', 'hello')
+
     if (this.firstActivated) { this.firstActivated = false } else {
 
     }
   },
   created () {
     this.currentLocalDir = this.$bus.appGetPath('desktop')
-    console.log(this.$bus.emit('gg'))
+    const chokidarService = this.$bus.getSubService('chokidarService')
+    this.chokidarService = chokidarService
   },
   methods: {
     getNewWatcher () {
@@ -46,6 +50,16 @@ export default {
         .on('all', (e, path) => {
           // log(e, path)
         })
+    },
+    sendTo (electronId, channel, data = 'hello') {
+      this.$electron.ipcRenderer.sendTo(electronId, channel, data)
+      this.totalSend += 1
+      log(`#${this.totalSend}: send a message to channel [${channel}](#${electronId})`)
+    },
+    addEvent (event, handler) {
+      this.$electron.ipcRenderer.removeAllListeners(event)
+      this.$electron.ipcRenderer.on(event, handler)
+      log(`added event [${event}]!`)
     }
   }
 }
