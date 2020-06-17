@@ -26,7 +26,8 @@ export default {
     }
     return arr.join('&')
   },
-  log: text => {
-    if (!IS_PROD && enableLog) console.log(`[${moment().format('YYYY-MM-DD HH:mm:ss')}] ${text}`)
+  log: (text, ...args) => {
+    args.unshift('color: green; font-size: 14px;')
+    if (!IS_PROD && enableLog) console.info(`%c[${moment().format('YYYY-MM-DD HH:mm:ss')}] ${text}`, ...args || '')
   }
 }

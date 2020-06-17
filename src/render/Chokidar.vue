@@ -16,9 +16,8 @@
 </template>
 
 <script>
-import utils from 'plugins/utils'
 const chokidar = require('chokidar')
-const log = utils.log
+const log = console.log
 
 export default {
   data () {
@@ -32,11 +31,13 @@ export default {
       eventTrigged: 0,
       watchedFiles: 0,
       clients: {},
+      // all event name = serviceName + event name
       handlers: [
         {
           event: 'status',
+          echoEvent: 'status',
           handler: (e, arg) => {
-            e.sendTo('status', {
+            e.echo('status', {
               status: this.status,
               createdTime: this.createdTime,
               totalSend: this.totalSend,
@@ -44,12 +45,14 @@ export default {
               totalError: this.totalError,
               eventTrigged: this.eventTrigged,
               watchedFiles: this.watchedFiles,
-              clients: this.clients
+              clients: this.clients,
+              apis: this.handlers.reduce((item, handler) => { return item.concat(this.serviceName + handler.event) }, [])
             })
           }
         },
         {
           event: 'initWatcher',
+          echoEvents: ['watcherInitialing', 'watcherReady', 'watcherError'],
           handler: (e, arg) => {
             const events = arg.events || []
             const watcher = chokidar.watch(arg.target, arg.options || { depth: 0 })
@@ -64,9 +67,9 @@ export default {
               })
 
             events.forEach(event => {
-              watcher.on(event, () => {
+              watcher.on(event, (...args) => {
                 this.eventTrigged += 1
-                e.echo(`event:${event}`, arguments)
+                e.echo(`watchEvent:${event}`, args)
               })
             })
 
@@ -78,8 +81,9 @@ export default {
         },
         {
           event: 'closeWatcher',
+          echoEvents: ['watcherClosing', 'watcherClosed'],
           handler: (e, arg) => {
-            e.watcher().close().then(() => {
+            e.watcher.close().then(() => {
               e.clearClient()
               e.echo('watcherClosed', e.client().target)
             })
@@ -88,8 +92,9 @@ export default {
         },
         {
           event: 'unwatch',
+          echoEvents: ['unwatching', 'unwatched'],
           handler: (e, arg) => {
-            e.watcher().unwatch(arg.target).then(() => {
+            e.watcher.unwatch(arg.target).then(() => {
               e.echo('unwatched', arg.target)
             })
             e.echo('unwatching', arg.target)
@@ -97,25 +102,28 @@ export default {
         },
         {
           event: 'addEvent',
+          echoEvent: 'eventAdded',
           handler: (e, arg) => {
-            e.watcher().on(arg.event, () => {
+            e.watcher.on(arg.event, (...args) => {
               this.eventTrigged += 1
-              e.echo(`event:${event}`, arguments)
+              e.echo(`watchEvent:${event}`, args)
             })
             e.echo('eventAdded', arg.event)
           }
         },
         {
           event: 'addWatch',
+          echoEvent: 'watchAdded',
           handler: (e, arg) => {
-            e.watcher().add(arg.target)
+            e.watcher.add(arg.target)
             e.echo('watchAdded', arg.event)
           }
         },
         {
           event: 'getWatched',
+          echoEvent: 'hasWatched',
           handler: (e, arg) => {
-            e.echo('hasWatched', e.watcher().getWatched())
+            e.echo('hasWatched', e.watcher.getWatched())
           }
         }
       ]
@@ -127,6 +135,7 @@ export default {
     }
   },
   created () {
+    console.log(this.$bus.electronId)
     this.initService()
   },
   methods: {
@@ -166,7 +175,7 @@ export default {
           this.totalRecived += 1
           const id = e.senderId
 
-          log(`#${this.totalRecived}: recived a message from [#${id}], content [${arg}]`)
+          log(`#${this.totalRecived}: recived a message from [#${id}], content:`, arg)
           if (!this.clients[id]) this.clients[id] = { watcher: undefined, ready: false }
 
           try {
@@ -174,8 +183,8 @@ export default {
               echo: (channel, data) => { this.sendTo(id, channel, data) },
               setClient: (key, value) => { this.setClient(id, key, value) },
               clearClient: () => { this.clients[id] = {} },
-              client: () => this.clients[id],
-              watcher: () => this.clients[id].watcher,
+              get client () { return this.clients[id] },
+              get watcher () { return this.clients[id].watcher },
               senderId: id
             }, arg)
           } catch (e) {

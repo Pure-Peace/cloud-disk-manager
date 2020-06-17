@@ -6,10 +6,15 @@ const install = (Vue, options) => {
         getWindow: Function,
         getSubService: Function,
         appManager: Object,
+        // electronId id
+        electronId: Number,
+        // electron window
+        win: Object,
         router: options.router,
         appName: 'Cloud Disk Manager',
         topbarHeight: 70,
         leftbarWidth: 80,
+        // leftbar menu: top
         leftbarTopMenuItems: [
           {
             icon: 'dir',
@@ -27,6 +32,7 @@ const install = (Vue, options) => {
             handle: this.changePage
           }
         ],
+        // leftbar menu: bottom
         leftbarBottomMenuItems: [
           {
             icon: 'setting',
@@ -61,6 +67,8 @@ const install = (Vue, options) => {
       this.appManager = appManager
       this.getSubService = appManager.getSubService
       this.getWindow = appManager.getWindow
+      this.win = this.$electron.remote.getCurrentWindow()
+      this.electronId = this.win.id
     },
     methods: {
       getAppManager () {

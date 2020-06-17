@@ -1,23 +1,22 @@
 <template>
   <div>
-    <div v-if="chokidarTaskProcessing">
+    <div v-if="!chokidar.ready">
       chokidar service loading...
       <custom-button @click="closeWatcher">
         cancel
       </custom-button>
     </div>
     <div v-else>
-      <div>{{ currentLocalDir }}</div>
-      <div>{{ currentLocalDirFiles }}</div>
+      <div>{{ currentDir }}</div>
+      <div>{{ dirFiles }}</div>
     </div>
   </div>
 </template>
 
 <script>
 import customButton from 'components/customButton.vue'
-import utils from 'plugins/utils'
 const fs = require('fs')
-const log = utils.log
+const log = console.log
 
 export default {
   components: {
@@ -25,69 +24,140 @@ export default {
   },
   data () {
     return {
-      chokidarTaskProcessing: true,
-      chokidarReady: false,
-      chokidarStatus: false,
-      chokidarService: Object,
-      firstActivated: true,
-      currentLocalDir: undefined,
-      watcher: undefined
+      currentDir: '',
+      dirFiles: [],
+      chokidar: {
+        serviceName: 'chokidar',
+        connected: false,
+        ready: true,
+        send: Function,
+        callbacks: [
+          {
+            event: 'status',
+            handler: (data) => {
+              data = data[0]
+              this.chokidar.status = data
+              if (data.status === 'RUNNING') this.chokidar.connected = true
+            }
+          },
+          {
+            event: 'watcherInitialing',
+            handler: (...args) => {
+              console.log(args)
+            }
+          },
+          {
+            event: 'watcherReady',
+            handler: (...args) => {
+              console.log(args)
+            }
+          },
+          {
+            event: 'watcherError',
+            handler: (...args) => {
+              console.log(args)
+            }
+          },
+          {
+            event: 'watcherClosing',
+            handler: (...args) => {
+              console.log(args)
+            }
+          },
+          {
+            event: 'watcherClosed',
+            handler: (...args) => {
+              console.log(args)
+            }
+          },
+          {
+            event: 'eventAdded',
+            handler: (...args) => {
+              console.log(args)
+            }
+          },
+          {
+            event: 'watchAdded',
+            handler: (...args) => {
+              console.log(args)
+            }
+          },
+          {
+            event: 'hasWatched',
+            handler: (...args) => {
+              console.log(args)
+            }
+          }
+        ]
+      }
     }
   },
   computed: {
-    currentLocalDirFiles () {
-      return fs.readdirSync(this.currentLocalDir)
-    }
+
   },
   watch: {
-    currentLocalDir: {
-      handler: function (current, before) {
-        log('change dir', before, ' -> ', current)
-        this.getNewWatcher()
-      }
+    currentDir () {
+      this.getDirFiles()
     }
   },
   activated () {
-    this.currentLocalDir = this.$bus.appGetPath('desktop')
-    if (this.firstActivated) { this.firstActivated = false } else {
-      this.sendTo(this.chokidarService.win.id, 'test', '')
-    }
+    this.currentDir = this.$bus.appGetPath('desktop')
+    this.initChokidarEvents()
+    this.connectChokidar()
+    this.getChokidarStatus()
   },
   created () {
-    const chokidarService = this.$bus.getSubService('chokidarService')
-    this.chokidarService = chokidarService
-    this.addEvent('chokidarStatus', (e, arg) => {
-      if (arg === 'RUNNING') this.chokidarStatus = true
-      log(`chokidar is ${arg} now!`)
-    })
-    this.addEvent('chokidarResults', (e, arg) => {
-      if (arg.status === 1) this.chokidarTaskProcessing = true
-      console.log('chokidarResults:', arg)
-    })
-    this.addEvent('chokidarTaskProcessComplete', (e, arg) => {
-      console.log('chokidarTaskProcessComplete:', arg)
-      this.chokidarTaskProcessing = false
-    })
+
   },
   methods: {
-    getNewWatcher () {
-      if (this.currentLocalDir && this.currentLocalDir !== '') {
-        console.log(this.currentLocalDir)
-        this.sendTo(this.chokidarService.win.id, 'test', this.currentLocalDir)
+    closeWatcher () {
+
+    },
+    connectChokidar () {
+      log('try to connect chokidar service...')
+      try {
+        const chokidarService = this.$bus.getSubService('chokidarService')
+        if (!chokidarService) throw Error('can not connect to chokidar service!')
+        this.chokidar.service = chokidarService
+        this.chokidar.send = (channel, data) => {
+          this.$electron.ipcRenderer.sendTo(this.chokidar.service.win.id, channel, data = null)
+          log(`send a message to chokidar, channel: [${channel}], data:`, data)
+        }
+        this.chokidar.connected = true
+        log('connect to chokidar service success!', this.chokidar)
+      } catch (e) {
+        this.chokidar.connected = false
+        throw new Error(e)
       }
     },
-    sendTo (electronId, channel, data = '') {
-      this.$electron.ipcRenderer.sendTo(electronId, channel, data)
-      this.totalSend += 1
-      log(`send a message to channel [${channel}](#${electronId})`)
+    getChokidarStatus () {
+      this.chokidar.send('status')
+    },
+    getDirFiles () {
+      const result = fs.readdirSync(this.currentDir)
+      this.dirFiles = result
+      return result
     },
     addEvent (event, handler) {
-      this.$electron.ipcRenderer.removeAllListeners(event)
-      this.$electron.ipcRenderer.on(event, handler)
-      log(`added event [${event}]!`)
+      try {
+        this.$electron.ipcRenderer.removeAllListeners(event)
+        this.$electron.ipcRenderer.on(event, handler)
+        log(`added ipc event [${event}]!`)
+      } catch (e) {
+        throw new Error(e)
+      }
     },
-    closeWatcher () {
-      this.sendTo(this.chokidarService.win.id, 'stopTaskProcess', '')
+    initChokidarEvents () {
+      this.chokidar.callbacks.forEach(item => this.addEvent(
+        this.chokidar.serviceName + item.event, (e, ...arg) => {
+          log('recived a message from chokidar, content:', arg)
+          try {
+            item.handler(arg)
+          } catch (e) {
+            throw new Error(e)
+          }
+        })
+      )
     }
   }
 }
