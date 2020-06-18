@@ -148,9 +148,9 @@ export default {
       }
     },
     closeWatcher () {
-      if (!this.closing && this.closingInterval) {
-        this.closing = true
-        this.closingInterval = setInterval(() => {
+      if (!this.chokidar.closing && this.chokidar.closingInterval) {
+        this.chokidar.closing = true
+        this.chokidar.closingInterval = setInterval(() => {
           this.chokidar.send('closeWatcher')
         }, 500)
       }
