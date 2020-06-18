@@ -5,6 +5,7 @@ import VueBus from 'plugins/bus'
 import router from 'render/router'
 import store from 'render/store'
 import i18n from 'plugins/i18n'
+import vuescroll from 'render/plugins/vuescroll-native'
 
 // subservice components
 import Chokidar from 'render/Chokidar.vue'
@@ -53,6 +54,7 @@ function initApp () {
 Vue.prototype.$electron = require('electron')
 Vue.config.productionTip = false
 Vue.use(VModal)
+Vue.use(vuescroll)
 Vue.use(VueBus, { router })
 Vue.component('svg-icon', SvgIcon)
 Vue.prototype.$backend = backend

@@ -13,7 +13,7 @@ export default class chokidarService {
     const subServiceParams = `?${utils.objectToUrl({ subservice: true, service: 'Chokidar', elementId: 'chokidar' })}`
     if (process.env.WEBPACK_DEV_SERVER_URL) {
       this.win.loadURL(process.env.WEBPACK_DEV_SERVER_URL + subServiceParams)
-      if (!process.env.IS_TEST) {
+      if (process.env.IS_TEST) {
         // 开发环境下自启动开发者工具
         // start developer tools in the development environment
         this.win.webContents.openDevTools({ mode: 'detach' })
@@ -42,7 +42,7 @@ export default class chokidarService {
         // eslint-disable-next-line no-undef
         icon: `${__static}/app.ico`,
         frame: true,
-        show: process.env.IS_TEST,
+        show: false, // process.env.IS_TEST,
         closable: false,
         fullscreenable: false,
         fullscreen: false,

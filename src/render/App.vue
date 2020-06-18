@@ -67,5 +67,6 @@ export default {
 #app-router-view {
   flex: 1;
   border-top-left-radius: 8px;
+  overflow: hidden;
 }
 </style>

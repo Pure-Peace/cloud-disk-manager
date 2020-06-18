@@ -1,15 +1,48 @@
 
 <template>
-  <div>
+  <div style="height: 100%;">
     <div v-if="chokidar.connected && chokidar.initialing">
       chokidar service loading...
       <custom-button @click="closeWatcher">
         {{ chokidar.closing ? 'closing...' : 'cancel' }}
       </custom-button>
     </div>
-    <div v-else>
-      <div>{{ currentDir }}</div>
-      <div>{{ dirFiles }}</div>
+    <div
+      v-else
+      class="file-explorer-box"
+    >
+      <div
+        class="file-explorer-topbar"
+        :style="fileTopbarHeight"
+      >
+        {{ currentDir }}
+      </div>
+      <div
+        ref="fileList"
+        class="file-list"
+        :style="fileListStyle"
+        @mouseenter="showBar"
+        @mouseleave="hideBar"
+      >
+        <vue-scroll
+          ref="vueScroll"
+          :ops="scrollBarOps"
+        >
+          <div
+            v-for="(file, idx) in dirFiles"
+            :key="idx"
+            style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;"
+          >
+            {{ file }}
+          </div>
+
+          <div
+            class="drag-resize"
+            :style="dragResizeStyle"
+            @mousedown="dragResize"
+          />
+        </vue-scroll>
+      </div>
     </div>
   </div>
 </template>
@@ -26,6 +59,32 @@ export default {
   },
   data () {
     return {
+      scrollBarOps: {
+        scrollPanel: {
+          scrollingX: false,
+          scrollingY: true,
+          speed: 0,
+          verticalNativeBarPos: 'right'
+        },
+        bar: {
+          background: '#000000',
+          opacity: 0.3,
+          specifyBorderRadius: '0px',
+          size: '10px',
+          showDelay: 500,
+          keepShow: false,
+          disable: false
+        },
+        rail: {
+          size: '10px',
+          specifyBorderRadius: '0px',
+          gutterOfEnds: null,
+          gutterOfSide: '4px',
+          keepShow: false
+        }
+      },
+      resizeWidth: 4,
+      fileExplorerTopbarHeight: 50,
       currentDir: '',
       dirFiles: [],
       chokidar: {
@@ -42,11 +101,15 @@ export default {
           {
             event: 'status',
             handler: (data) => {
-              data = data[0]
-              this.chokidar.status = data
-
-              if (data.status === 'RUNNING') this.chokidar.connected = true
-              else this.cantUseChokidar()
+              try {
+                data = data[0]
+                Object.assign(this.chokidar, data)
+                if (data.status === 'RUNNING') this.chokidar.connected = true
+                else this.cantUseChokidar()
+              } catch (err) {
+                this.cantUseChokidar(err)
+                throw new Error(err)
+              }
             }
           },
           {
@@ -123,7 +186,18 @@ export default {
     }
   },
   computed: {
-
+    fileListStyle () {
+      return `height: calc(100% - ${this.fileExplorerTopbarHeight}px);`
+    },
+    fileTopbarHeight () {
+      return `height: ${this.fileExplorerTopbarHeight}px;`
+    },
+    dragResizeStyle () {
+      return `width: ${this.resizeWidth}px;`
+    },
+    sliderBoxStyle () {
+      return `right: ${this.resizeWidth}px;`
+    }
   },
   watch: {
     currentDir () {
@@ -135,14 +209,44 @@ export default {
     this.initChokidarEvents()
     this.connectChokidar()
     this.getChokidarStatus()
-    this.initWatcher({ events: ['all'], target: this.currentDir, options: {} })
+    this.initWatcher()
   },
   created () {
 
   },
   methods: {
+    showBar () {
+      this.$refs.vueScroll.showBar()
+      this.$refs.vueScroll.vuescroll.state.dontHide = true
+    },
+    hideBar () {
+      this.$refs.vueScroll.vuescroll.state.dontHide = false
+      this.$refs.vueScroll.hideBar()
+    },
+    dragResize (e) {
+      const clearEvents = (e) => {
+        document.onmouseup = undefined
+        document.onmousemove = undefined
+        document.onmouseup = undefined
+        document.onmouseout = undefined
+        document.body.style.cursor = 'auto'
+        this.scrollBarOps.bar.disable = false
+      }
+      const stopDrag = (e) => clearEvents(e)
+      const initDragEvents = (e) => {
+        document.onmouseleave = () => stopDrag(e)
+        document.onmouseup = (e) => stopDrag(e)
+        document.onmousemove = (e) => {
+          const width = this.$refs.fileList.clientWidth
+          this.$refs.fileList.style.width = width + e.movementX + 'px'
+        }
+      }
+      this.scrollBarOps.bar.disable = true
+      document.body.style.cursor = 'ew-resize'
+      initDragEvents(e)
+    },
     initWatcher (data = { events: ['all'], target: this.currentDir, options: undefined }) {
-      if (!this.chokidar.disabled && !this.chokidar.initialing) {
+      if (!this.chokidar.disabled && !this.chokidar.initialing && !this.chokidar.watcher) {
         if (typeof (data) !== 'object') throw new Error('data must be an object')
         this.chokidar.initialing = true
         this.chokidar.ready = false
@@ -225,5 +329,40 @@ export default {
 </script>
 
 <style lang="less" scoped>
+.file-explorer-topbar {
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px dashed #F1F2F6;
+}
+
+.file-explorer-box {
+  height: 100%;
+}
+
+.file-list {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-left: 10px;
+  width: 300px;
+  max-width: 100%;
+  min-width: 80px;
+  background-color: rgb(243, 243, 243);
+}
+
+.drag-resize {
+  cursor: ew-resize;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  right: 0;
+
+}
+
+.file-list:hover .__bar-is-vertical {
+  display: none !important;
+}
 
 </style>
