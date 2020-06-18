@@ -6,6 +6,8 @@ const install = (Vue, options) => {
         getWindow: Function,
         getSubService: Function,
         appManager: Object,
+        // electron dialog
+        dialog: Function,
         // electronId id
         electronId: Number,
         // electron window
@@ -69,6 +71,7 @@ const install = (Vue, options) => {
       this.getWindow = appManager.getWindow
       this.win = this.$electron.remote.getCurrentWindow()
       this.electronId = this.win.id
+      this.dialog = this.$electron.remote.dialog
     },
     methods: {
       getAppManager () {

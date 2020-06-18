@@ -31,7 +31,6 @@ export default {
       eventTrigged: 0,
       watchedFiles: 0,
       clients: {},
-      // all event name = serviceName + event name
       handlers: [
         {
           event: 'status',
@@ -45,38 +44,43 @@ export default {
               totalError: this.totalError,
               eventTrigged: this.eventTrigged,
               watchedFiles: this.watchedFiles,
-              clients: this.clients,
-              apis: this.handlers.reduce((item, handler) => { return item.concat(this.serviceName + handler.event) }, [])
+              apis: this.handlers,
+              ...e.client
             })
           }
         },
         {
           event: 'initWatcher',
-          echoEvents: ['watcherInitialing', 'watcherReady', 'watcherError'],
+          echoEvents: ['watcherInitialing', 'watcherReady', 'watcherError', 'initialerror'],
           handler: (e, arg) => {
-            const events = arg.events || []
-            const watcher = chokidar.watch(arg.target, arg.options || { depth: 0 })
-              .on('ready', () => {
-                e.setClient('ready', true)
-                e.setClient('watchedCount', watcher.getWatched().length)
-                e.echo('watcherReady', arg.target)
-              })
-              .on('error', err => {
-                this.totalError += 1
-                e.echo('watcherError', err)
+            try {
+              const events = arg.events || []
+              const watcher = chokidar.watch(arg.target, arg.options || { depth: 0 })
+                .on('ready', () => {
+                  e.setClient('ready', true)
+                  e.setClient('watchedCount', watcher.getWatched().length)
+                  e.echo('watcherReady', arg.target)
+                })
+                .on('error', err => {
+                  this.totalError += 1
+                  e.echo('watcherError', err)
+                })
+
+              events.forEach(event => {
+                watcher.on(event, (...args) => {
+                  this.eventTrigged += 1
+                  e.echo(`watchEvent:${event}`, args)
+                })
               })
 
-            events.forEach(event => {
-              watcher.on(event, (...args) => {
-                this.eventTrigged += 1
-                e.echo(`watchEvent:${event}`, args)
-              })
-            })
-
-            e.setClient('target', arg.target)
-            e.setClient('ready', false)
-            e.setClient('watcher', watcher)
-            e.echo('watcherInitialing', 'please wait for watcher to initialize')
+              e.setClient('target', arg.target)
+              e.setClient('ready', false)
+              e.setClient('watcher', watcher)
+              e.echo('watcherInitialing', 'please wait for watcher to initialize')
+            } catch (err) {
+              e.echo('initialerror', err)
+              throw new Error(err)
+            }
           }
         },
         {
@@ -135,7 +139,6 @@ export default {
     }
   },
   created () {
-    console.log(this.$bus.electronId)
     this.initService()
   },
   methods: {
@@ -152,7 +155,7 @@ export default {
       try {
         this.$electron.ipcRenderer.sendTo(id, channel, data)
         this.totalSend += 1
-        log(`#${this.totalSend}: send a message to channel [${channel}](#${id})`)
+        log(`%c#${this.totalSend}: send a message to client(#${id}) channel: [${channel}]`, 'color: green; font-weight: bold;')
       } catch (e) {
         this.totalError += 1
         throw new Error(e)
@@ -174,17 +177,17 @@ export default {
         item.event, (e, arg) => {
           this.totalRecived += 1
           const id = e.senderId
-
-          log(`#${this.totalRecived}: recived a message from [#${id}], content:`, arg)
-          if (!this.clients[id]) this.clients[id] = { watcher: undefined, ready: false }
+          log(`%c#${this.totalRecived}: recived a message from client(#${id}), channel: ${item.event}, content:`, 'color: blue; font-weight: bold;', arg)
+          if (!this.clients[id]) this.clients[id] = { watcher: null, ready: false }
+          const that = this
 
           try {
             item.handler({
-              echo: (channel, data) => { this.sendTo(id, channel, data) },
+              echo: (channel, ...data) => { this.sendTo(id, channel, data) },
               setClient: (key, value) => { this.setClient(id, key, value) },
               clearClient: () => { this.clients[id] = {} },
-              get client () { return this.clients[id] },
-              get watcher () { return this.clients[id].watcher },
+              get client () { return that.clients[id] },
+              get watcher () { return that.clients[id].watcher },
               senderId: id
             }, arg)
           } catch (e) {

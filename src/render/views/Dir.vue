@@ -1,6 +1,7 @@
+
 <template>
   <div>
-    <div v-if="!chokidar.ready">
+    <div v-if="chokidar.connected && chokidar.initialing">
       chokidar service loading...
       <custom-button @click="closeWatcher">
         cancel
@@ -14,6 +15,7 @@
 </template>
 
 <script>
+
 import customButton from 'components/customButton.vue'
 const fs = require('fs')
 const log = console.log
@@ -30,6 +32,7 @@ export default {
         serviceName: 'chokidar',
         connected: false,
         ready: true,
+        initialing: false,
         send: Function,
         callbacks: [
           {
@@ -37,25 +40,38 @@ export default {
             handler: (data) => {
               data = data[0]
               this.chokidar.status = data
+
               if (data.status === 'RUNNING') this.chokidar.connected = true
+              else this.cantUseChokidar()
+            }
+          },
+          {
+            event: 'initialerror',
+            handler: (err) => {
+              console.error(err)
+              this.cantUseChokidar(err)
             }
           },
           {
             event: 'watcherInitialing',
             handler: (...args) => {
-              console.log(args)
+              this.chokidar.initialing = true
+              this.chokidar.ready = false
             }
           },
           {
             event: 'watcherReady',
             handler: (...args) => {
-              console.log(args)
+              this.chokidar.initialing = false
+              this.chokidar.ready = true
+              this.getChokidarStatus()
             }
           },
           {
             event: 'watcherError',
             handler: (...args) => {
-              console.log(args)
+              console.error(args)
+              this.getChokidarStatus()
             }
           },
           {
@@ -67,25 +83,31 @@ export default {
           {
             event: 'watcherClosed',
             handler: (...args) => {
-              console.log(args)
+              this.chokidar.ready = false
+              this.chokidar.initialing = false
+              this.getChokidarStatus()
             }
           },
           {
             event: 'eventAdded',
             handler: (...args) => {
               console.log(args)
+              this.getChokidarStatus()
             }
           },
           {
             event: 'watchAdded',
             handler: (...args) => {
               console.log(args)
+              this.chokidar.send('getWatched')
+              this.getChokidarStatus()
             }
           },
           {
             event: 'hasWatched',
             handler: (...args) => {
               console.log(args)
+              this.chokidar.watched = args
             }
           }
         ]
@@ -105,11 +127,18 @@ export default {
     this.initChokidarEvents()
     this.connectChokidar()
     this.getChokidarStatus()
+    this.initWatcher()
   },
   created () {
 
   },
   methods: {
+    initWatcher (data = { events: ['all'], target: this.currentDir, options: undefined }) {
+      if (typeof (data) !== 'object') throw new Error('data must be an object')
+      this.chokidar.initialing = true
+      this.chokidar.ready = false
+      this.chokidar.send('initWatcher', data)
+    },
     closeWatcher () {
 
     },
@@ -120,8 +149,8 @@ export default {
         if (!chokidarService) throw Error('can not connect to chokidar service!')
         this.chokidar.service = chokidarService
         this.chokidar.send = (channel, data) => {
-          this.$electron.ipcRenderer.sendTo(this.chokidar.service.win.id, channel, data = null)
-          log(`send a message to chokidar, channel: [${channel}], data:`, data)
+          this.$electron.ipcRenderer.sendTo(this.chokidar.service.win.id, channel, data)
+          log(`%csend a message to chokidar, channel: [${channel}], data:`, 'color: green; font-weight: bold;', data)
         }
         this.chokidar.connected = true
         log('connect to chokidar service success!', this.chokidar)
@@ -148,9 +177,10 @@ export default {
       }
     },
     initChokidarEvents () {
+      const channel = (event) => this.chokidar.serviceName + event
       this.chokidar.callbacks.forEach(item => this.addEvent(
-        this.chokidar.serviceName + item.event, (e, ...arg) => {
-          log('recived a message from chokidar, content:', arg)
+        channel(item.event), (e, arg) => {
+          log(`%crecived a message from chokidar, channel: [${channel(item.event)}], content:`, 'color: blue; font-weight: bold;', arg)
           try {
             item.handler(arg)
           } catch (e) {
@@ -158,6 +188,16 @@ export default {
           }
         })
       )
+    },
+    cantUseChokidar (err = '') {
+      this.chokidar.initialing = false
+      this.chokidar.ready = false
+      this.$bus.dialog.showMessageBox({
+        title: '文件监控系统暂不可用',
+        message: '文件监控系统暂不可用：',
+        detail: `文件监控系统无法正常工作，您将不能使用监控文件变更的自动备份功能。\n\n${err}`,
+        type: (err && err !== '') ? 'error' : 'warning'
+      })
     }
   }
 }
