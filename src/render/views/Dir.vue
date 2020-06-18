@@ -4,7 +4,7 @@
     <div v-if="chokidar.connected && chokidar.initialing">
       chokidar service loading...
       <custom-button @click="closeWatcher">
-        cancel
+        {{ chokidar.closing ? 'closing...' : 'cancel' }}
       </custom-button>
     </div>
     <div v-else>
@@ -30,6 +30,7 @@ export default {
       dirFiles: [],
       chokidar: {
         serviceName: 'chokidar',
+        disabled: false,
         connected: false,
         ready: true,
         initialing: false,
@@ -86,8 +87,9 @@ export default {
           {
             event: 'watcherClosed',
             handler: (...args) => {
-              this.closing = false
-              clearInterval(this.closingInterval)
+              this.chokidar.closing = false
+              clearInterval(this.chokidar.closingInterval)
+              this.chokidar.disabled = true
               this.chokidar.ready = false
               this.chokidar.initialing = false
               this.chokidar.connected = false
@@ -140,7 +142,7 @@ export default {
   },
   methods: {
     initWatcher (data = { events: ['all'], target: this.currentDir, options: undefined }) {
-      if (!this.chokidar.initialing) {
+      if (!this.chokidar.disabled && !this.chokidar.initialing) {
         if (typeof (data) !== 'object') throw new Error('data must be an object')
         this.chokidar.initialing = true
         this.chokidar.ready = false
@@ -148,7 +150,7 @@ export default {
       }
     },
     closeWatcher () {
-      if (!this.chokidar.closing && this.chokidar.closingInterval) {
+      if (!this.chokidar.closing) {
         this.chokidar.closing = true
         this.chokidar.closingInterval = setInterval(() => {
           this.chokidar.send('closeWatcher')
