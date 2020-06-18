@@ -34,6 +34,9 @@ export default {
         ready: true,
         initialing: false,
         send: Function,
+        closingInterval: undefined,
+        closing: false,
+        cantUseTipShowed: false,
         callbacks: [
           {
             event: 'status',
@@ -83,8 +86,11 @@ export default {
           {
             event: 'watcherClosed',
             handler: (...args) => {
+              this.closing = false
+              clearInterval(this.closingInterval)
               this.chokidar.ready = false
               this.chokidar.initialing = false
+              this.chokidar.connected = false
               this.getChokidarStatus()
             }
           },
@@ -127,36 +133,45 @@ export default {
     this.initChokidarEvents()
     this.connectChokidar()
     this.getChokidarStatus()
-    this.initWatcher()
+    this.initWatcher({ events: ['all'], target: this.currentDir, options: {} })
   },
   created () {
 
   },
   methods: {
     initWatcher (data = { events: ['all'], target: this.currentDir, options: undefined }) {
-      if (typeof (data) !== 'object') throw new Error('data must be an object')
-      this.chokidar.initialing = true
-      this.chokidar.ready = false
-      this.chokidar.send('initWatcher', data)
+      if (!this.chokidar.initialing) {
+        if (typeof (data) !== 'object') throw new Error('data must be an object')
+        this.chokidar.initialing = true
+        this.chokidar.ready = false
+        this.chokidar.send('initWatcher', data)
+      }
     },
     closeWatcher () {
-
+      if (!this.closing && this.closingInterval) {
+        this.closing = true
+        this.closingInterval = setInterval(() => {
+          this.chokidar.send('closeWatcher')
+        }, 500)
+      }
     },
     connectChokidar () {
-      log('try to connect chokidar service...')
-      try {
-        const chokidarService = this.$bus.getSubService('chokidarService')
-        if (!chokidarService) throw Error('can not connect to chokidar service!')
-        this.chokidar.service = chokidarService
-        this.chokidar.send = (channel, data) => {
-          this.$electron.ipcRenderer.sendTo(this.chokidar.service.win.id, channel, data)
-          log(`%csend a message to chokidar, channel: [${channel}], data:`, 'color: green; font-weight: bold;', data)
+      if (!this.chokidar.connected) {
+        log('try to connect chokidar service...')
+        try {
+          const chokidarService = this.$bus.getSubService('chokidarService')
+          if (!chokidarService) throw Error('can not connect to chokidar service!')
+          this.chokidar.service = chokidarService
+          this.chokidar.send = (channel, data) => {
+            this.$electron.ipcRenderer.sendTo(this.chokidar.service.win.id, channel, data)
+            log(`%csend a message to chokidar, channel: [${channel}], data:`, 'color: green; font-weight: bold;', data)
+          }
+          this.chokidar.connected = true
+          log('connect to chokidar service success!', this.chokidar)
+        } catch (e) {
+          this.chokidar.connected = false
+          throw new Error(e)
         }
-        this.chokidar.connected = true
-        log('connect to chokidar service success!', this.chokidar)
-      } catch (e) {
-        this.chokidar.connected = false
-        throw new Error(e)
       }
     },
     getChokidarStatus () {
@@ -190,14 +205,18 @@ export default {
       )
     },
     cantUseChokidar (err = '') {
+      this.chokidar.connected = false
       this.chokidar.initialing = false
       this.chokidar.ready = false
-      this.$bus.dialog.showMessageBox({
-        title: '文件监控系统暂不可用',
-        message: '文件监控系统暂不可用：',
-        detail: `文件监控系统无法正常工作，您将不能使用监控文件变更的自动备份功能。\n\n${err}`,
-        type: (err && err !== '') ? 'error' : 'warning'
-      })
+      if (!this.cantUseTipShowed) {
+        this.cantUseTipShowed = true
+        this.$bus.dialog.showMessageBox({
+          title: '文件监控系统暂不可用',
+          message: '文件监控系统暂不可用：',
+          detail: `文件监控系统无法正常工作，您将不能使用监控文件变更的自动备份功能。\n\n${err}`,
+          type: (err && err !== '') ? 'error' : 'warning'
+        })
+      }
     }
   }
 }

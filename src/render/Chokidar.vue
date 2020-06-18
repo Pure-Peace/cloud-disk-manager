@@ -87,11 +87,15 @@ export default {
           event: 'closeWatcher',
           echoEvents: ['watcherClosing', 'watcherClosed'],
           handler: (e, arg) => {
-            e.watcher.close().then(() => {
-              e.clearClient()
-              e.echo('watcherClosed', e.client().target)
-            })
-            e.echo('watcherClosing', 'please wait for watcher to close')
+            try {
+              e.watcher.close().then(() => {
+                e.echo('watcherClosed', e.client)
+                e.clearClient()
+              })
+              e.echo('watcherClosing', 'please wait for watcher to close')
+            } catch (e) {
+              throw new Error('already closed')
+            }
           }
         },
         {
