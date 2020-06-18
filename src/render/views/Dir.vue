@@ -1,29 +1,18 @@
 
 <template>
   <div style="height: 100%;">
-    <div v-if="chokidar.connected && chokidar.initialing">
-      chokidar service loading...
-      <custom-button @click="closeWatcher">
-        {{ chokidar.closing ? 'closing...' : 'cancel' }}
-      </custom-button>
-    </div>
-    <div
-      v-else
-      class="file-explorer-box"
-    >
-      <div
-        class="file-explorer-topbar"
-        :style="fileTopbarHeight"
-      >
-        {{ currentDir }}
-      </div>
+    <div class="file-list-box">
       <div
         ref="fileList"
         class="file-list"
-        :style="fileListStyle"
         @mouseenter="showBar"
         @mouseleave="hideBar"
       >
+        <div
+          class="file-list-topbar"
+        >
+          {{ currentDir }}
+        </div>
         <vue-scroll
           ref="vueScroll"
           :ops="scrollBarOps"
@@ -31,14 +20,18 @@
           <div
             v-for="(file, idx) in dirFiles"
             :key="idx"
-            style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;"
+            :style="fileSelectedStyle(idx)"
+            class="file-content"
+
+            @click="selectFile(file, idx)"
           >
-            {{ file }}
+            <span
+              class="file-name"
+            >{{ file }}</span>
           </div>
 
           <div
             class="drag-resize"
-            :style="dragResizeStyle"
             @mousedown="dragResize"
           />
         </vue-scroll>
@@ -48,17 +41,17 @@
 </template>
 
 <script>
-
-import customButton from 'components/customButton.vue'
+// import customButton from 'components/customButton.vue'
 const fs = require('fs')
 const log = console.log
 
 export default {
   components: {
-    customButton
   },
   data () {
     return {
+      currentSelected: -1,
+      selectedFiles: [],
       scrollBarOps: {
         scrollPanel: {
           scrollingX: false,
@@ -84,7 +77,6 @@ export default {
         }
       },
       resizeWidth: 4,
-      fileExplorerTopbarHeight: 50,
       currentDir: '',
       dirFiles: [],
       chokidar: {
@@ -100,7 +92,7 @@ export default {
         callbacks: [
           {
             event: 'status',
-            handler: (data) => {
+            handler: data => {
               try {
                 data = data[0]
                 Object.assign(this.chokidar, data)
@@ -114,7 +106,7 @@ export default {
           },
           {
             event: 'initialerror',
-            handler: (err) => {
+            handler: err => {
               console.error(err)
               this.cantUseChokidar(err)
             }
@@ -186,17 +178,17 @@ export default {
     }
   },
   computed: {
-    fileListStyle () {
-      return `height: calc(100% - ${this.fileExplorerTopbarHeight}px);`
+    fileSelectedStyle () {
+      return (idx) => {
+        return this.currentSelected === idx ? 'background-color: red;' : ''
+      }
     },
-    fileTopbarHeight () {
-      return `height: ${this.fileExplorerTopbarHeight}px;`
-    },
-    dragResizeStyle () {
-      return `width: ${this.resizeWidth}px;`
-    },
-    sliderBoxStyle () {
-      return `right: ${this.resizeWidth}px;`
+    fileContentClass () {
+      return (idx) => {
+        let theStyle = 'file-content'
+        if (this.selectedFiles.includes(idx)) theStyle += ' file-selected '
+        return theStyle
+      }
     }
   },
   watch: {
@@ -211,10 +203,13 @@ export default {
     this.getChokidarStatus()
     this.initWatcher()
   },
-  created () {
-
-  },
+  created () {},
   methods: {
+    selectFile (file, idx) {
+      log(file, idx, 'selected')
+      this.selectedFiles = [idx]
+      this.currentSelected = idx
+    },
     showBar () {
       this.$refs.vueScroll.showBar()
       this.$refs.vueScroll.vuescroll.state.dontHide = true
@@ -224,7 +219,7 @@ export default {
       this.$refs.vueScroll.hideBar()
     },
     dragResize (e) {
-      const clearEvents = (e) => {
+      const clearEvents = e => {
         document.onmouseup = undefined
         document.onmousemove = undefined
         document.onmouseup = undefined
@@ -232,11 +227,11 @@ export default {
         document.body.style.cursor = 'auto'
         this.scrollBarOps.bar.disable = false
       }
-      const stopDrag = (e) => clearEvents(e)
-      const initDragEvents = (e) => {
+      const stopDrag = e => clearEvents(e)
+      const initDragEvents = e => {
         document.onmouseleave = () => stopDrag(e)
-        document.onmouseup = (e) => stopDrag(e)
-        document.onmousemove = (e) => {
+        document.onmouseup = e => stopDrag(e)
+        document.onmousemove = e => {
           const width = this.$refs.fileList.clientWidth
           this.$refs.fileList.style.width = width + e.movementX + 'px'
         }
@@ -245,9 +240,15 @@ export default {
       document.body.style.cursor = 'ew-resize'
       initDragEvents(e)
     },
-    initWatcher (data = { events: ['all'], target: this.currentDir, options: undefined }) {
-      if (!this.chokidar.disabled && !this.chokidar.initialing && !this.chokidar.watcher) {
-        if (typeof (data) !== 'object') throw new Error('data must be an object')
+    initWatcher (
+      data = { events: ['all'], target: this.currentDir, options: undefined }
+    ) {
+      if (
+        !this.chokidar.disabled &&
+        !this.chokidar.initialing &&
+        !this.chokidar.watcher
+      ) {
+        if (typeof data !== 'object') throw new Error('data must be an object')
         this.chokidar.initialing = true
         this.chokidar.ready = false
         this.chokidar.send('initWatcher', data)
@@ -266,11 +267,19 @@ export default {
         log('try to connect chokidar service...')
         try {
           const chokidarService = this.$bus.getSubService('chokidarService')
-          if (!chokidarService) throw Error('can not connect to chokidar service!')
+          if (!chokidarService) { throw Error('can not connect to chokidar service!') }
           this.chokidar.service = chokidarService
           this.chokidar.send = (channel, data) => {
-            this.$electron.ipcRenderer.sendTo(this.chokidar.service.win.id, channel, data)
-            log(`%csend a message to chokidar, channel: [${channel}], data:`, 'color: green; font-weight: bold;', data)
+            this.$electron.ipcRenderer.sendTo(
+              this.chokidar.service.win.id,
+              channel,
+              data
+            )
+            log(
+              `%csend a message to chokidar, channel: [${channel}], data:`,
+              'color: green; font-weight: bold;',
+              data
+            )
           }
           this.chokidar.connected = true
           log('connect to chokidar service success!', this.chokidar)
@@ -298,10 +307,16 @@ export default {
       }
     },
     initChokidarEvents () {
-      const channel = (event) => this.chokidar.serviceName + event
-      this.chokidar.callbacks.forEach(item => this.addEvent(
-        channel(item.event), (e, arg) => {
-          log(`%crecived a message from chokidar, channel: [${channel(item.event)}], content:`, 'color: blue; font-weight: bold;', arg)
+      const channel = event => this.chokidar.serviceName + event
+      this.chokidar.callbacks.forEach(item =>
+        this.addEvent(channel(item.event), (e, arg) => {
+          log(
+            `%crecived a message from chokidar, channel: [${channel(
+              item.event
+            )}], content:`,
+            'color: blue; font-weight: bold;',
+            arg
+          )
           try {
             item.handler(arg)
           } catch (e) {
@@ -320,7 +335,7 @@ export default {
           title: '文件监控系统暂不可用',
           message: '文件监控系统暂不可用：',
           detail: `文件监控系统无法正常工作，您将不能使用监控文件变更的自动备份功能。\n\n${err}`,
-          type: (err && err !== '') ? 'error' : 'warning'
+          type: err && err !== '' ? 'error' : 'warning'
         })
       }
     }
@@ -329,14 +344,18 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.file-explorer-topbar {
-  padding: 0 20px;
+.file-list-topbar {
+  padding: 0 15px;
   display: flex;
   align-items: center;
-  border-bottom: 1px dashed #F1F2F6;
+  border-bottom: 1px dashed #f1f2f6;
+  height: 35px;
+  font-size: 12px;
+  color: #616161;
+  box-shadow: 0 1px 1px rgba(50, 50, 93, 0.1);
 }
 
-.file-explorer-box {
+.file-list-box {
   height: 100%;
 }
 
@@ -345,11 +364,11 @@ export default {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding-left: 10px;
   width: 300px;
+  height: 100%;
   max-width: 100%;
   min-width: 80px;
-  background-color: rgb(243, 243, 243);
+  background-color: #F3F3F3;
 }
 
 .drag-resize {
@@ -358,11 +377,35 @@ export default {
   position: absolute;
   top: 0;
   right: 0;
-
+  width: 4px;
 }
 
 .file-list:hover .__bar-is-vertical {
   display: none !important;
 }
 
+.file-content {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  height: 22px;
+  cursor: pointer;
+  padding: 0 10px;
+}
+
+.file-content:hover {
+  background-color: #DEDEDE;
+}
+
+.file-name {
+  font-size: 13px;
+  font-family: "Segoe WPC", "Segoe UI", "Microsoft YaHei", sans-serif;
+  line-height: 22px;
+  color: #616161;
+  padding: 0 5px;
+}
+
+.file-selected {
+  background-color: red;
+}
 </style>
