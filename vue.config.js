@@ -9,7 +9,7 @@ module.exports = {
   pages: {
     app: {
       title: 'Cloud Disk Manager',
-      entry: 'src/render/index.js',
+      entry: 'src/renderer/index.js',
       template: 'public/index.html',
       filename: 'index.html'
     }
@@ -33,14 +33,14 @@ module.exports = {
       .set('svg', resolve('src/assets/svg'))
       .set('locale', resolve('src/locale'))
       .set('backend', resolve('src/backend'))
-      .set('render', resolve('src/render'))
+      .set('renderer', resolve('src/renderer'))
       .set('main', resolve('src/main'))
-      .set('mainServices', resolve('src/render/mainServices'))
-      .set('subServices', resolve('src/render/subServices'))
-      .set('views', resolve('src/render/views'))
-      .set('themes', resolve('src/render/themes'))
-      .set('components', resolve('src/render/components'))
-      .set('layouts', resolve('src/render/layouts'))
+      .set('mainServices', resolve('src/renderer/mainServices'))
+      .set('subServices', resolve('src/renderer/subServices'))
+      .set('views', resolve('src/renderer/views'))
+      .set('themes', resolve('src/renderer/themes'))
+      .set('components', resolve('src/renderer/components'))
+      .set('layouts', resolve('src/renderer/layouts'))
     // svg config
     const svgRule = config.module.rule('svg')
     svgRule.uses.clear()

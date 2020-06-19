@@ -1,14 +1,14 @@
 // vue and plugins
 import Vue from 'vue'
-import App from 'render/App.vue'
+import App from 'renderer/App.vue'
 import VueBus from 'plugins/bus'
-import router from 'render/router'
-import store from 'render/store'
+import router from 'renderer/router'
+import store from 'renderer/store'
 import i18n from 'plugins/i18n'
-import vuescroll from 'render/plugins/vuescroll-native'
+import vuescroll from 'renderer/plugins/vuescroll-native'
 
 // subservice components
-import Chokidar from 'render/Chokidar.vue'
+import Chokidar from 'renderer/Chokidar.vue'
 
 // custom plugins
 import VModal from 'vue-js-modal'
