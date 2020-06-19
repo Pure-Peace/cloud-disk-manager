@@ -95,7 +95,7 @@ export default {
     fileItemStyle () {
       return (idx) => {
         let classNames = 'file-item'
-        if (this.selectedFilesIdx.includes(idx)) classNames += ' file-selected'
+        if (this.selectedFileIdx === idx || this.selectedFilesIdx.includes(idx)) classNames += ' file-selected'
         return classNames
       }
     },
@@ -144,12 +144,24 @@ export default {
       }
     },
     selectFile (file, idx) {
-      log(idx, file, 'selected')
-      this.selectedFileIdx = idx
+      const select = (multiple) => {
+        this.selectedFileIdx = idx
+        if (multiple) this.selectedFilesIdx.push(idx)
+        else this.selectedFilesIdx = [idx]
+        this.$emit('fileSelected', file, idx)
+        log(idx, file, 'selected')
+      }
+      const unselect = () => {
+        this.selectedFileIdx = null
+        this.selectedFilesIdx.splice(this.selectedFilesIdx.indexOf(idx), 1)
+        this.$emit('fileUnselected', file, idx)
+        log(idx, file, 'unselected')
+      }
+      const selected = this.selectedFilesIdx.includes(idx)
       if (this.onCtrl) {
-        if (this.selectedFilesIdx.includes(idx)) this.selectedFilesIdx.splice(this.selectedFilesIdx.indexOf(idx), 1)
-        else this.selectedFilesIdx.push(idx)
-      } else this.selectedFilesIdx = [idx]
+        if (selected) unselect()
+        else select(true)
+      } else if (!selected) select()
     },
     showScrollBar () {
       this.$refs.vueScroll.showBar()
