@@ -2,6 +2,8 @@ import { BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import utils from '@/plugins/utils'
 
+const IS_PROD = process.env.NODE_ENV === 'production'
+
 export default class chokidarService {
   constructor (win) {
     // win代表electron窗口实例
@@ -13,14 +15,14 @@ export default class chokidarService {
     const subServiceParams = `?${utils.objectToUrl({ subservice: true, service: 'Chokidar', elementId: 'chokidar' })}`
     if (process.env.WEBPACK_DEV_SERVER_URL) {
       this.win.loadURL(process.env.WEBPACK_DEV_SERVER_URL + subServiceParams)
-      if (process.env.IS_TEST) {
+      if (!IS_PROD) {
         // 开发环境下自启动开发者工具
         // start developer tools in the development environment
         this.win.webContents.openDevTools({ mode: 'detach' })
       }
     } else {
       createProtocol('app')
-      this.win.loadURL('app://./chokidar.html' + subServiceParams)
+      this.win.loadURL('app://./index.html' + subServiceParams)
     }
   }
 
@@ -42,7 +44,7 @@ export default class chokidarService {
         // eslint-disable-next-line no-undef
         icon: `${__static}/app.ico`,
         frame: true,
-        show: false, // process.env.IS_TEST,
+        show: !IS_PROD,
         closable: false,
         fullscreenable: false,
         fullscreen: false,

@@ -12,6 +12,7 @@
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
   },
+  "main": "background.js",
   "dependencies": {
     "basic-ftp": "^4.6.0",
     "chokidar": "^3.4.0",
