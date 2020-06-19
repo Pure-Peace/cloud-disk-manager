@@ -3,6 +3,7 @@ const install = (Vue, options) => {
     data () {
       return {
         process,
+        set: Vue.set,
         getWindow: Function,
         getSubService: Function,
         appManager: Object,

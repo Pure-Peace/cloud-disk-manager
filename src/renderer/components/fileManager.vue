@@ -17,7 +17,7 @@
           <div
             v-for="(file, idx) in dirFiles"
             :key="idx"
-            class="file-item"
+            :class="fileItemStyle(idx)"
             :title="fileItemTitle(file)"
             @click="selectFile(file, idx)"
           >
@@ -55,8 +55,10 @@ export default {
   },
   data () {
     return {
-      selectedFiles: '',
-      currentSelected: '',
+      onCtrl: false,
+      onShift: false,
+      selectedFileIdx: -1,
+      selectedFilesIdx: [],
       dirFiles: [],
       resizing: false,
       currentDir: this.targetDir,
@@ -90,6 +92,13 @@ export default {
     fileListContentStyle () {
       return this.resizing ? 'pointer-events: none;' : ''
     },
+    fileItemStyle () {
+      return (idx) => {
+        let classNames = 'file-item'
+        if (this.selectedFilesIdx.includes(idx)) classNames += ' file-selected'
+        return classNames
+      }
+    },
     fileItemTitle () {
       return (file) => {
         return `${this.currentDir}\\${file}`
@@ -100,6 +109,9 @@ export default {
     currentDir () {
       this.getDirFiles()
     }
+  },
+  mounted () {
+    this.watchKeyEvent()
   },
   created () {
     this.mixinScrollBarOptions()
@@ -132,9 +144,12 @@ export default {
       }
     },
     selectFile (file, idx) {
-      log(file, idx, 'selected')
-      this.selectedFiles = idx
-      this.currentSelected = idx
+      log(idx, file, 'selected')
+      this.selectedFileIdx = idx
+      if (this.onCtrl) {
+        if (this.selectedFilesIdx.includes(idx)) this.selectedFilesIdx.splice(this.selectedFilesIdx.indexOf(idx), 1)
+        else this.selectedFilesIdx.push(idx)
+      } else this.selectedFilesIdx = [idx]
     },
     showScrollBar () {
       this.$refs.vueScroll.showBar()
@@ -143,6 +158,26 @@ export default {
     hideScrollBar () {
       this.$refs.vueScroll.vuescroll.state.dontHide = false
       this.$refs.vueScroll.hideBar()
+    },
+    watchKeyEvent () {
+      const setKeyStatus = (keyCode, status) => {
+        switch (keyCode) {
+          case 16:
+            if (this.onShfit === status) return
+            this.onShfit = status
+            break
+          case 17:
+            if (this.onCtrl === status) return
+            this.onCtrl = status
+            break
+        }
+      }
+      document.onkeydown = (e) => {
+        setKeyStatus(e.keyCode, true)
+      }
+      document.onkeyup = (e) => {
+        setKeyStatus(e.keyCode, false)
+      }
     },
     dragResize (e) {
       const clearEvents = e => {
@@ -220,6 +255,7 @@ export default {
   height: 22px;
   cursor: pointer;
   padding: 0 10px;
+  color: #616161;
 }
 
 .file-item:hover {
@@ -230,11 +266,12 @@ export default {
   font-size: 13px;
   font-family: "Segoe WPC", "Segoe UI", "Microsoft YaHei", sans-serif;
   line-height: 22px;
-  color: #616161;
   padding: 0 5px;
 }
 
 .file-selected {
-  background-color: red;
+  color: #895503 !important;
+  background-color: #E4E6F1 !important;
 }
+
 </style>
