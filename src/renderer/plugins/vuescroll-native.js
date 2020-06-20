@@ -2121,7 +2121,9 @@ function getPanelData(context) {
   context.scrollYEnable = true;
   context.scrollXEnable = true;
 
-  data.nativeOn.DOMMouseScroll = data.nativeOn.mousewheel = context.onMouseWheel;
+  // i deleted here: nativeOn.mousewheel
+  // data.nativeOn.DOMMouseScroll = data.nativeOn.mousewheel = context.onMouseWheel
+  data.nativeOn.DOMMouseScroll = context.onMouseWheel;
 
   var _context$mergedOption = context.mergedOptions.scrollPanel,
       scrollingY = _context$mergedOption.scrollingY,

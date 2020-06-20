@@ -23,6 +23,7 @@
             class="file-item"
             :title="fileItemTitle(file)"
             @click="selectFile(file, idx)"
+            @contextmenu.prevent="showContextmenu($event, file, idx)"
           >
             <span class="file-name">{{ file }}</span>
           </div>
@@ -60,6 +61,7 @@ export default {
     return {
       onCtrl: false,
       onShift: false,
+      onContextmenuFileIdx: undefined,
       selectedFileIdx: undefined,
       selectedFilesIdx: [],
       dirFiles: [],
@@ -117,10 +119,60 @@ export default {
     this.watchKeyEvent()
   },
   created () {
+    this.$on('test', () => { console.log('caonima') })
     this.mixinScrollBarOptions()
     if (!this.currentDir) this.currentDir = this.$bus.appGetPath('desktop')
   },
   methods: {
+    showContextmenu (event, file, idx) {
+      // this.fileOnContextmenu(file, idx)
+      this.$contextmenu({
+        items: [
+          {
+            label: '返回(B)',
+            onClick: () => {
+              this.message = '返回(B)'
+              console.log('返回(B)')
+            }
+          },
+          { label: '前进(F)', disabled: true },
+          { label: '重新加载(R)', divided: true, icon: 'el-icon-refresh' },
+          { label: '另存为(A)...' },
+          { label: '打印(P)...', icon: 'el-icon-printer' },
+          { label: '投射(C)...', divided: true },
+          {
+            label: '使用网页翻译(T)',
+            divided: true,
+            minWidth: 0,
+            children: [{ label: '翻译成简体中文' }, { label: '翻译成繁体中文' }]
+          },
+          {
+            label: '截取网页(R)',
+            minWidth: 0,
+            children: [
+              {
+                label: '截取可视化区域',
+                onClick: () => {
+                  this.message = '截取可视化区域'
+                  console.log('截取可视化区域')
+                }
+              },
+              { label: '截取全屏' }
+            ]
+          },
+          { label: '查看网页源代码(V)', icon: 'el-icon-view' },
+          { label: '检查(N)' }
+        ],
+        event,
+        // x: event.clientX,
+        // y: event.clientY,
+        customClass: 'class-a',
+        zIndex: 3,
+        minWidth: 230,
+        el: this.$refs[`fileItem${idx}`][0]
+      })
+    },
+
     getDirFiles () {
       log(`listing directory [${this.currentDir}]...`)
       const start = Date.now()
@@ -146,12 +198,30 @@ export default {
         this.scrollBarOptions = options2
       }
     },
+    fileOnContextmenu (file, idx) {
+      const getTarget = (index) => this.$refs[`fileItem${index}`][0]
+      const select = () => {
+        this.onContextmenuFileIdx = idx
+        getTarget(idx).className += ' file-oncontextmenu'
+        log(idx, file, 'onContextmenu')
+      }
+      const unselect = () => {
+        const target = getTarget(lastIdx)
+        target.className = target.className.replace(' file-oncontextmenu', '')
+      }
+
+      const lastIdx = this.onContextmenuFileIdx
+      if (lastIdx !== idx) {
+        if (lastIdx) unselect()
+        select()
+      }
+    },
     selectFile (file, idx) {
       const select = (multiple) => {
         this.selectedFileIdx = idx
         if (multiple) this.selectedFilesIdx.push(idx)
         else this.selectedFilesIdx = [idx]
-        this.$refs[`fileItem${idx}`][0].className = 'file-item file-selected'
+        target.className += ' file-selected'
         this.$emit('fileSelected', file, idx)
         log(idx, file, 'selected')
       }
@@ -159,11 +229,19 @@ export default {
       const unselect = () => {
         this.selectedFileIdx = null
         this.selectedFilesIdx.splice(this.selectedFilesIdx.indexOf(idx), 1)
-        this.$refs[`fileItem${idx}`][0].className = 'file-item'
+        target.className = target.className.replace(' file-selected', '')
         this.$emit('fileUnselected', file, idx)
         log(idx, file, 'unselected')
       }
 
+      const unselectAll = () => {
+        this.selectedFilesIdx.forEach(fileIdx => {
+          const target = this.$refs[`fileItem${fileIdx}`][0]
+          target.className = target.className.replace(' file-selected', '')
+        })
+      }
+
+      const target = this.$refs[`fileItem${idx}`][0]
       const selected = this.selectedFilesIdx.includes(idx)
       // multiple select
       if (this.onCtrl) {
@@ -172,7 +250,7 @@ export default {
       } else {
         // single select
         if (!selected) {
-          this.selectedFilesIdx.forEach(fileIdx => { this.$refs[`fileItem${fileIdx}`][0].className = 'file-item' })
+          unselectAll()
           select()
         }
       }
@@ -304,6 +382,11 @@ export default {
 .file-selected {
   color: #895503 !important;
   background-color: #E4E6F1 !important;
+}
+
+.contextmenu-active {
+  color: #A96C0C !important;
+  background-color: #D8DAE5 !important;
 }
 
 </style>

@@ -10,11 +10,12 @@ import vuescroll from 'renderer/plugins/vuescroll-native'
 // subservice components
 import Chokidar from 'renderer/Chokidar.vue'
 
-// custom plugins
+// components, custom plugins
 import VModal from 'vue-js-modal'
 import moment from 'moment'
 import utils from 'plugins/utils'
 import backend from 'backend/resources'
+import Contextmenu from 'components/contextmenu/'
 import SvgIcon from 'components/svgIcon/index.vue'
 import 'components/svgIcon'
 
@@ -56,6 +57,7 @@ Vue.config.productionTip = false
 Vue.use(VModal)
 Vue.use(vuescroll)
 Vue.use(VueBus, { router })
+Vue.use(Contextmenu)
 Vue.component('svg-icon', SvgIcon)
 Vue.prototype.$backend = backend
 Vue.prototype.$moment = moment
