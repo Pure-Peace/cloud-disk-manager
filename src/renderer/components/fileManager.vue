@@ -19,7 +19,8 @@
           <div
             v-for="(file, idx) in dirFiles"
             :key="idx"
-            :class="fileItemStyle(idx)"
+            :ref="`fileItem${idx}`"
+            class="file-item"
             :title="fileItemTitle(file)"
             @click="selectFile(file, idx)"
           >
@@ -59,7 +60,7 @@ export default {
     return {
       onCtrl: false,
       onShift: false,
-      selectedFileIdx: -1,
+      selectedFileIdx: undefined,
       selectedFilesIdx: [],
       dirFiles: [],
       resizing: false,
@@ -150,20 +151,31 @@ export default {
         this.selectedFileIdx = idx
         if (multiple) this.selectedFilesIdx.push(idx)
         else this.selectedFilesIdx = [idx]
+        this.$refs[`fileItem${idx}`][0].className = 'file-item file-selected'
         this.$emit('fileSelected', file, idx)
         log(idx, file, 'selected')
       }
+
       const unselect = () => {
         this.selectedFileIdx = null
         this.selectedFilesIdx.splice(this.selectedFilesIdx.indexOf(idx), 1)
+        this.$refs[`fileItem${idx}`][0].className = 'file-item'
         this.$emit('fileUnselected', file, idx)
         log(idx, file, 'unselected')
       }
+
       const selected = this.selectedFilesIdx.includes(idx)
+      // multiple select
       if (this.onCtrl) {
         if (selected) unselect()
         else select(true)
-      } else if (!selected) select()
+      } else {
+        // single select
+        if (!selected) {
+          this.selectedFilesIdx.forEach(fileIdx => { this.$refs[`fileItem${fileIdx}`][0].className = 'file-item' })
+          select()
+        }
+      }
     },
     showScrollBar () {
       this.$refs.vueScroll.showBar()
