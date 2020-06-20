@@ -7,7 +7,9 @@
       @mouseleave="hideScrollBar"
     >
       <div class="file-list-topbar">
-        {{ currentDir }}
+        <div class="file-currentdir">
+          {{ currentDir }}
+        </div>
       </div>
       <vue-scroll
         ref="vueScroll"
@@ -229,6 +231,12 @@ export default {
   font-size: 12px;
   color: #616161;
   box-shadow: 0 1px 1px rgba(50, 50, 93, 0.1);
+}
+
+.file-currentdir {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .file-list-box {

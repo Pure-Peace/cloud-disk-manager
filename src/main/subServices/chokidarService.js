@@ -2,7 +2,7 @@ import { BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import utils from '@/plugins/utils'
 
-const IS_PROD = true // process.env.NODE_ENV === 'production'
+const IS_PROD = process.env.NODE_ENV === 'production'
 
 export default class chokidarService {
   constructor (win) {
