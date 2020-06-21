@@ -17,15 +17,15 @@
       >
         <div :style="fileListContentStyle">
           <div
-            v-for="(file, idx) in dirFiles"
+            v-for="(file, idx) in fileList"
             :key="idx"
             :ref="`fileItem${idx}`"
             class="file-item"
-            :title="fileItemTitle(file)"
-            @click="selectFile(file, idx)"
+            :title="file.path"
+            @click="handleFileClick(file, idx)"
             @contextmenu.prevent="showContextmenu($event, file, idx)"
           >
-            <span class="file-name">{{ file }}</span>
+            <span class="file-name">{{ file.name }}</span>
           </div>
         </div>
         <div
@@ -38,7 +38,8 @@
 </template>
 
 <script>
-const fs = require('fs')
+const fs = require('fs-extra')
+const PATH = require('path')
 
 const log = console.log
 
@@ -61,10 +62,10 @@ export default {
     return {
       onCtrl: false,
       onShift: false,
-      onContextmenuFileIdx: undefined,
       selectedFileIdx: undefined,
       selectedFilesIdx: [],
-      dirFiles: [],
+      fileList: [],
+      listingDir: true,
       resizing: false,
       currentDir: this.targetDir,
       scrollBarOptions: {
@@ -96,36 +97,50 @@ export default {
   computed: {
     fileListContentStyle () {
       return this.resizing ? 'pointer-events: none;' : ''
-    },
-    fileItemStyle () {
-      return (idx) => {
-        let classNames = 'file-item'
-        if (this.selectedFileIdx === idx || this.selectedFilesIdx.includes(idx)) classNames += ' file-selected'
-        return classNames
-      }
-    },
-    fileItemTitle () {
-      return (file) => {
-        return `${this.currentDir}\\${file}`
-      }
     }
   },
   watch: {
-    currentDir () {
-      this.getDirFiles()
+    currentDir (dirPath) {
+      setImmediate(async () => { this.fileList = await this.listdir(dirPath) })
     }
   },
   mounted () {
     this.watchKeyEvent()
   },
   created () {
-    this.$on('test', () => { console.log('caonima') })
     this.mixinScrollBarOptions()
-    if (!this.currentDir) this.currentDir = this.$bus.appGetPath('desktop')
+    this.initialCurrentDir()
   },
   methods: {
+    initialCurrentDir () {
+      setImmediate(() => { if (!this.currentDir) this.currentDir = this.$bus.appGetPath('desktop') })
+    },
+    handleFileClick (file, idx) {
+      this.selectFile(file, idx)
+    },
+    getFileInfo (path) {
+      const base = {
+        name: PATH.basename(path),
+        path,
+        dir: PATH.dirname(path),
+        ext: PATH.extname(name),
+        initialed: false
+      }
+      try {
+        const stats = fs.statSync(path)
+        Object.assign(base, stats)
+        base.isDir = stats.isDirectory()
+        base.isFile = stats.isFile()
+        base.isBlockDevice = stats.isBlockDevice()
+        base.isCharacterDevice = stats.isCharacterDevice()
+        base.initialed = true
+        return base
+      } catch (err) {
+        log(`failed when stat file: ${path},`, new Error(err))
+        return base
+      }
+    },
     showContextmenu (event, file, idx) {
-      // this.fileOnContextmenu(file, idx)
       this.$contextmenu({
         items: [
           {
@@ -160,12 +175,10 @@ export default {
               { label: '截取全屏' }
             ]
           },
-          { label: '查看网页源代码(V)', icon: 'el-icon-view' },
+          { label: '查看网页源代码(V)', icon: 'dir' },
           { label: '检查(N)' }
         ],
         event,
-        // x: event.clientX,
-        // y: event.clientY,
         customClass: 'class-a',
         zIndex: 3,
         minWidth: 230,
@@ -173,13 +186,24 @@ export default {
       })
     },
 
-    getDirFiles () {
-      log(`listing directory [${this.currentDir}]...`)
-      const start = Date.now()
-      const result = fs.readdirSync(this.currentDir)
-      this.dirFiles = result
-      log(`directory listing completed. file total: ${result.length}, spent time: ${Date.now() - start}ms`)
-      return result
+    async listdir (dirPath) {
+      try {
+        log(`listing directory [${dirPath}]...`)
+        const start = Date.now()
+        this.listingDir = true
+        const fileList = await Promise.all(
+          fs.readdirSync(dirPath).map(
+            async (fileName) => await this.getFileInfo(PATH.join(dirPath, fileName))
+          )
+        )
+        log(`directory listing completed. file total: ${fileList.length}, spent time: ${Date.now() - start}ms`)
+        this.listingDir = false
+        return fileList
+      } catch (err) {
+        log(`filed when listing directory [${dirPath}]`)
+        this.listingDir = false
+        throw new Error(err)
+      }
     },
     mixinScrollBarOptions () {
       const options1 = this.scrollBarOps
@@ -198,24 +222,6 @@ export default {
         this.scrollBarOptions = options2
       }
     },
-    fileOnContextmenu (file, idx) {
-      const getTarget = (index) => this.$refs[`fileItem${index}`][0]
-      const select = () => {
-        this.onContextmenuFileIdx = idx
-        getTarget(idx).className += ' file-oncontextmenu'
-        log(idx, file, 'onContextmenu')
-      }
-      const unselect = () => {
-        const target = getTarget(lastIdx)
-        target.className = target.className.replace(' file-oncontextmenu', '')
-      }
-
-      const lastIdx = this.onContextmenuFileIdx
-      if (lastIdx !== idx) {
-        if (lastIdx) unselect()
-        select()
-      }
-    },
     selectFile (file, idx) {
       const select = (multiple) => {
         this.selectedFileIdx = idx
@@ -223,7 +229,7 @@ export default {
         else this.selectedFilesIdx = [idx]
         target.className += ' file-selected'
         this.$emit('fileSelected', file, idx)
-        log(idx, file, 'selected')
+        log(idx, file, file.name, 'selected')
       }
 
       const unselect = () => {
@@ -231,7 +237,7 @@ export default {
         this.selectedFilesIdx.splice(this.selectedFilesIdx.indexOf(idx), 1)
         target.className = target.className.replace(' file-selected', '')
         this.$emit('fileUnselected', file, idx)
-        log(idx, file, 'unselected')
+        log(idx, file, file.name, 'unselected')
       }
 
       const unselectAll = () => {

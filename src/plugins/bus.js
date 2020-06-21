@@ -1,8 +1,11 @@
+const path = require('path')
+
 const install = (Vue, options) => {
   const Bus = new Vue({
     data () {
       return {
         process,
+        sep: path.sep,
         set: Vue.set,
         getWindow: Function,
         getSubService: Function,
