@@ -21,7 +21,7 @@ module.exports = {
   devServer: {
     // can be overwritten by process.env.HOST
     host: 'localhost',
-    port: 8080
+    port: 8099
   },
   chainWebpack: config => {
     // 路径别名，如用“@”指代“src”等

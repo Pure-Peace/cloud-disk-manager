@@ -7,6 +7,12 @@
       @mouseleave="hideScrollBar"
     >
       <div class="file-list-topbar">
+        <div>
+          <span style="padding: 0 5px;">
+            <svg-icon icon-class="dir" />
+          </span>
+          <span>当前目录</span>
+        </div>
         <div class="file-currentdir">
           {{ currentDir }}
         </div>
@@ -15,7 +21,7 @@
         ref="vueScroll"
         :ops="scrollBarOptions"
       >
-        <div>
+        <div class="file-list-content">
           <div
             v-for="(file, idx) in fileList"
             :key="idx"
@@ -25,7 +31,29 @@
             @click="handleFileClick(file, idx)"
             @contextmenu.prevent="showContextmenu($event, file, idx)"
           >
-            <span class="file-name">{{ file.name }}</span>
+            <div class="file-name">
+              {{ file.name }}
+            </div>
+            <div class="file-info-box">
+              <div class="file-info">
+                {{ utils.getFileType(file) }}
+              </div>
+              <div class="file-info">
+                修改时间 {{ utils.timeFormat(file.mtime) }}
+              </div>
+              <div
+                v-if="file.size > 0"
+                class="file-info"
+              >
+                {{ utils.sizeFormat(file.size) }}
+              </div>
+              <div
+                v-else
+                class="file-info"
+              >
+                未计算
+              </div>
+            </div>
           </div>
         </div>
       </vue-scroll>
@@ -35,11 +63,14 @@
         @resized="handleResized"
       />
     </div>
+    <file-info :file="selectedFile" />
   </div>
 </template>
 
 <script>
 import dragResize from 'components/dragResize.vue'
+import fileInfo from 'components/fileInfo.vue'
+import utils from 'components/utils.js'
 
 const fs = require('fs-extra')
 const PATH = require('path')
@@ -48,7 +79,8 @@ const log = console.log
 
 export default {
   components: {
-    dragResize
+    dragResize,
+    fileInfo
   },
   props: {
     targetDir: {
@@ -62,8 +94,10 @@ export default {
   },
   data () {
     return {
+      utils,
       onCtrl: false,
       onShift: false,
+      selectedFile: undefined,
       selectedFileIdx: undefined,
       selectedFilesIdx: [],
       fileList: [],
@@ -71,9 +105,6 @@ export default {
       currentDir: this.targetDir,
       scrollBarOptions: this.$bus.mixinScrollBarOptions()
     }
-  },
-  computed: {
-
   },
   watch: {
     currentDir (dirPath) {
@@ -93,6 +124,7 @@ export default {
   },
   created () {
     this.initialCurrentDir()
+    log(this.fileInfo)
   },
   methods: {
     handleResizing () {
@@ -122,6 +154,8 @@ export default {
         Object.assign(base, stats)
         base.isDir = stats.isDirectory()
         base.isFile = stats.isFile()
+        base.isFIFO = stats.isFIFO()
+        base.isSocket = stats.isSocket()
         base.isBlockDevice = stats.isBlockDevice()
         base.isCharacterDevice = stats.isCharacterDevice()
         base.initialed = true
@@ -199,6 +233,7 @@ export default {
     selectFile (file, idx) {
       const select = (multiple) => {
         this.selectedFileIdx = idx
+        this.selectedFile = file
         if (multiple) this.selectedFilesIdx.push(idx)
         else this.selectedFilesIdx = [idx]
         target.className += ' file-selected'
@@ -208,6 +243,7 @@ export default {
 
       const unselect = () => {
         this.selectedFileIdx = null
+        this.selectedFile = null
         this.selectedFilesIdx.splice(this.selectedFilesIdx.indexOf(idx), 1)
         target.className = target.className.replace(' file-selected', '')
         this.$emit('fileUnselected', file, idx)
@@ -268,21 +304,26 @@ export default {
   padding: 0 15px;
   display: flex;
   align-items: center;
-  border-bottom: 1px dashed #f1f2f6;
-  height: 35px;
+  border-bottom: 1px dashed #F1F2F6;
+  height: 60px;
   font-size: 12px;
   color: #616161;
-  box-shadow: 0 1px 1px rgba(50, 50, 93, 0.1);
+  //box-shadow: 0 0px 4px rgba(55, 55, 77, 0.1);
 }
 
 .file-currentdir {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  margin-left: 8px;
+  padding: 5px 15px;
+  border-radius: 4px;
+  background-color: #F1F2F6;
 }
 
 .file-list-box {
   height: 100%;
+  display: flex;
 }
 
 .file-list {
@@ -290,7 +331,7 @@ export default {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  width: 300px;
+  width: 70%;
   height: 100%;
   max-width: 100%;
   min-width: 80px;
@@ -300,17 +341,20 @@ export default {
   display: none !important;
 }
 
+.file-list-content {
+  background-color: transparent;
+}
+
 .file-item {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   cursor: pointer;
-  padding: 0 10px;
-  line-height: 28px;
+  padding: 6px 10px;
 }
 
 .file-item:hover {
-  background-color: #dedede;
+  background-color: #e1f0ff;
 }
 
 .file-name {
@@ -318,16 +362,45 @@ export default {
   font-family: "Segoe WPC", "Segoe UI", "Microsoft YaHei", sans-serif;
   line-height: 22px;
   padding: 0 5px;
+
 }
 
 .file-selected {
-  color: #895503 !important;
+  color: #000000 !important;
   background-color: #E4E6F1 !important;
 }
 
+.file-info-box {
+  padding: 4px;
+  display: flex;
+}
+
+.file-info {
+  display: flex;
+  background-color: #BBDEFB;
+  font-size: 12px;
+  padding: 2px 5px;
+  margin-left: 5px;
+  border-radius: 4px;
+}
+
 .contextmenu-active {
-  color: #A96C0C !important;
+  color: #000000 !important;
   background-color: #D8DAE5 !important;
+}
+
+.file-detail-box {
+  flex: 1;
+  background-color: #F1F2F6;
+}
+
+.file-detail-info {
+   word-break:normal;
+    width:auto;
+    display:block;
+    white-space:pre-wrap;
+    word-wrap : break-word ;
+    overflow: hidden ;
 }
 
 </style>

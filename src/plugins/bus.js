@@ -1,3 +1,4 @@
+import moment from 'moment'
 const path = require('path')
 
 const install = (Vue, options) => {
@@ -20,50 +21,47 @@ const install = (Vue, options) => {
         topbarHeight: 70,
         leftbarWidth: 80,
         // leftbar menu: top
-        leftbarTopMenuItems: [
-          {
-            icon: 'dir',
-            name: 'Dir',
-            handle: this.changePage
-          },
-          {
-            icon: 'cloud-outline',
-            name: 'Home',
-            handle: this.changePage
-          },
-          {
-            icon: 'list',
-            name: 'Tasks',
-            handle: this.changePage
-          }
+        leftbarTopMenuItems: [{
+          icon: 'dir',
+          name: 'Dir',
+          handle: this.changePage
+        },
+        {
+          icon: 'cloud-outline',
+          name: 'Home',
+          handle: this.changePage
+        },
+        {
+          icon: 'list',
+          name: 'Tasks',
+          handle: this.changePage
+        }
         ],
         // leftbar menu: bottom
-        leftbarBottomMenuItems: [
-          {
-            icon: 'setting',
-            name: 'Settings',
-            handle: this.changePage
-          },
-          {
-            icon: 'info',
-            name: 'About',
-            handle: this.modal,
-            modalType: 'appAbout'
-          }
+        leftbarBottomMenuItems: [{
+          icon: 'setting',
+          name: 'Settings',
+          handle: this.changePage
+        },
+        {
+          icon: 'info',
+          name: 'About',
+          handle: this.modal,
+          modalType: 'appAbout'
+        }
         ],
-        serviceList: [
-          {
-            name: 'ftp',
-            title: 'FTP'
-          },
-          {
-            name: 'smb',
-            title: 'SMB'
-          },
-          {
-            name: 'baiduyun',
-            title: '百度网盘'
-          }
+        serviceList: [{
+          name: 'ftp',
+          title: 'FTP'
+        },
+        {
+          name: 'smb',
+          title: 'SMB'
+        },
+        {
+          name: 'baiduyun',
+          title: '百度网盘'
+        }
         ],
         scrollBarOptions: {
           scrollPanel: {
@@ -115,6 +113,20 @@ const install = (Vue, options) => {
           this.isBlur = false
         })
       },
+      sizeFormat (size, units, digits = 2) {
+        /**
+         * @param {Number} size
+         * @param {Array} [units=['B', 'KB', 'MB', 'GB', 'TB']]
+         * @param {Number} [digits=2]
+         */
+        let unit
+        units = units || ['B', 'KB', 'MB', 'GB', 'TB']
+        while ((unit = units.shift()) && size > 1024) { size /= 1024 }
+        return (unit === 'B' ? size : size.toFixed(!digits ? 2 : digits)) + unit
+      },
+      timeFormat (time) {
+        return moment(time).format('YYYY-MM-DD HH:mm:ss')
+      },
       getAppManager () {
         return this.$electron.remote.getGlobal('appManager')
       },
@@ -122,10 +134,14 @@ const install = (Vue, options) => {
         return this.$electron.remote.app.getPath(pathName)
       },
       modal (item) {
-        this.$modal.show('global-modal', { type: item.modalType })
+        this.$modal.show('global-modal', {
+          type: item.modalType
+        })
       },
       changePage (item) {
-        this.router.push({ name: item.name })
+        this.router.push({
+          name: item.name
+        })
       },
       emit (event, ...args) {
         this.$emit(event, ...args)
