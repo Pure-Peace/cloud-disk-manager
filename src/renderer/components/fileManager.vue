@@ -3,8 +3,6 @@
     <div
       ref="filelist"
       class="file-list"
-      @mouseenter="showScrollBar"
-      @mouseleave="hideScrollBar"
     >
       <div class="file-list-topbar">
         <div>
@@ -271,14 +269,6 @@ export default {
         }
       }
     },
-    showScrollBar () {
-      this.$refs.vueScroll.showBar()
-      this.$refs.vueScroll.vuescroll.state.dontHide = true
-    },
-    hideScrollBar () {
-      this.$refs.vueScroll.vuescroll.state.dontHide = false
-      this.$refs.vueScroll.hideBar()
-    },
     watchKeyEvent () {
       const setKeyStatus = (keyCode, status) => {
         switch (keyCode) {
@@ -351,6 +341,8 @@ export default {
   text-overflow: ellipsis;
   cursor: pointer;
   padding: 6px 10px;
+    border-bottom: 1px dashed #F1F2F6;
+
 }
 
 .file-item:hover {
@@ -387,20 +379,6 @@ export default {
 .contextmenu-active {
   color: #000000 !important;
   background-color: #D8DAE5 !important;
-}
-
-.file-detail-box {
-  flex: 1;
-  background-color: #F1F2F6;
-}
-
-.file-detail-info {
-   word-break:normal;
-    width:auto;
-    display:block;
-    white-space:pre-wrap;
-    word-wrap : break-word ;
-    overflow: hidden ;
 }
 
 </style>

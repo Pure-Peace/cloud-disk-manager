@@ -28,9 +28,9 @@ export default new Vue({
     },
     timeTitleFormat () {
       const dict = {
-        atime: '上次访问时间',
-        ctime: '上次文件变更',
-        mtime: '上次内容变更',
+        atime: '最后访问',
+        ctime: '文件修改',
+        mtime: '内容变更',
         birthtime: '创建于'
       }
       return (title) => {

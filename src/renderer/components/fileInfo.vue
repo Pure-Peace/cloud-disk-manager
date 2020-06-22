@@ -1,48 +1,66 @@
 <template>
   <div class="file-detail-box">
-    <div v-if="file">
-      <div class="file-detail-info">
-        <span>名称:</span>
-        <span>{{ file.name }}</span>
-      </div>
-      <div class="file-detail-info">
-        <span>类型:</span>
-        <span> {{ utils.getFileType (file) }}</span>
-      </div>
-      <div
-        v-if="file.ext"
-        class="file-detail-info"
-      >
-        <span>文件后缀:</span>
-        <span>{{ file.ext }}</span>
-      </div>
-      <div class="file-detail-info">
-        <span>完整路径:</span>
-        <span>{{ file.path }}</span>
-      </div>
-      <div class="file-detail-info">
-        <span>所在目录:</span>
-        <span>{{ file.dir }}</span>
-      </div>
+    <vue-scroll :ops="scrollBarOptions">
+      <div v-if="file">
+        <div class="file-detail-item">
+          <div class="file-detail-name">
+            {{ file.name }}
+          </div>
+        </div>
+        <div class="file-detail-content">
+          <div class="file-detail-item">
+            <div>类型</div>
+            <div>{{ utils.getFileType (file) }}</div>
+          </div>
 
-      <div class="file-detail-info">
-        <span>大小:</span>
-        <span v-if="file.size">{{ utils.sizeFormat(file.size) }}</span>
-        <span v-else>未计算</span>
-      </div>
+          <div class="file-detail-item">
+            <div>大小</div>
+            <div v-if="file.size">
+              {{ utils.sizeFormat(file.size) }}
+            </div>
+            <div v-else>
+              未计算
+            </div>
+          </div>
 
-      <div
-        v-for="(time, key) in utils.fileTimes(file)"
-        :key="`file${key}`"
-        class="file-detail-info"
-      >
-        <span>{{ utils.timeTitleFormat(key) }}:</span>
-        <span style="margin-left: 5px; padding: 2px 4px;">{{ utils.timeFormat(time) }}</span>
+          <div
+            v-if="file.ext"
+            class="file-detail-item"
+          >
+            <div>文件后缀</div>
+            <div>{{ file.ext }}</div>
+          </div>
+        </div>
+        <div class="file-detail-content">
+          <div
+            class="file-detail-item"
+          >
+            <div>所在目录</div>
+            <div>{{ file.dir }}</div>
+          </div>
+
+          <div
+            class="file-detail-item"
+          >
+            <div>完整路径</div>
+            <div>{{ file.path }}</div>
+          </div>
+        </div>
+        <div class="file-detail-content">
+          <div
+            v-for="(time, key) in utils.fileTimes(file)"
+            :key="`file${key}`"
+            class="file-detail-item"
+          >
+            <div>{{ utils.timeTitleFormat(key) }}</div>
+            <div>{{ utils.timeFormat(time) }}</div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div v-show="!file">
-      请选择文件
-    </div>
+      <div v-show="!file">
+        请选择文件
+      </div>
+    </vue-scroll>
   </div>
 </template>
 
@@ -58,8 +76,64 @@ export default {
   },
   data () {
     return {
-      utils
+      utils,
+      scrollBarOptions: this.$bus.mixinScrollBarOptions()
+
     }
   }
 }
 </script>
+
+<style lang="less" scoped>
+@import '../themes/light.less';
+
+.file-detail-box {
+  flex: 1;
+  background-color: #f1f2f6;
+  padding: 10px;
+}
+
+.file-detail-content {
+    margin-top: 15px;
+    padding: 15px;
+        background-color: #E8EAF6;
+
+}
+
+.file-detail-name {
+    border-radius: 4px;
+    padding: 5px;
+    background-color: #E8EAF6;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.file-detail-item {
+  display: flex;
+  font-size: 13px;
+  margin: 5px 0;
+  flex-wrap: wrap;
+  :first-child {
+    white-space: nowrap;
+        border-radius: 4px;
+    background-color: @primary;
+    color: #FFFFFF;
+    display: flex;
+    align-self: baseline;
+    padding: 4px 8px;
+
+  }
+  :last-child {
+    white-space: pre-wrap;
+    word-wrap: normal;
+    word-break: break-all;
+    margin: 4px 8px;
+  }
+}
+
+div {
+    user-select: text;
+}
+</style>

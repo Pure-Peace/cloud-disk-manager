@@ -932,6 +932,14 @@ var bar = {
 
     // set class hook
     parent.setClassHook(this.type == 'vertical' ? 'vBarVisible' : 'hBarVisible', !!opacity);
+    parent.$el.onmouseenter = () => {
+      parent.vuescroll.state.dontHide = true
+      this.setRailHover()
+    }
+    parent.$el.onmouseleave = () => {
+      parent.vuescroll.state.dontHide = false
+      this.setRailLeave()
+    }
 
     /** Scrollbar style */
     var barStyle = (_barStyle = {
