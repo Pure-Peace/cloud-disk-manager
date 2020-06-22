@@ -65,7 +65,31 @@ const install = (Vue, options) => {
             name: 'baiduyun',
             title: '百度网盘'
           }
-        ]
+        ],
+        scrollBarOptions: {
+          scrollPanel: {
+            scrollingX: false,
+            scrollingY: true,
+            speed: 0,
+            verticalNativeBarPos: 'right'
+          },
+          bar: {
+            background: '#000000',
+            opacity: 0.3,
+            specifyBorderRadius: '0px',
+            size: '10px',
+            showDelay: 500,
+            keepShow: false,
+            disable: false
+          },
+          rail: {
+            size: '10px',
+            specifyBorderRadius: '0px',
+            gutterOfEnds: null,
+            gutterOfSide: '4px',
+            keepShow: false
+          }
+        }
       }
     },
     created () {
@@ -98,6 +122,23 @@ const install = (Vue, options) => {
       },
       off (event, callback) {
         this.$off(event, callback)
+      },
+      mixinScrollBarOptions (options) {
+        options = options || {}
+        const options2 = this.scrollBarOptions
+        if (options && Object.keys(options).length > 0) {
+          for (const key1 in options) {
+            for (const key2 in options2) {
+              if (key2 === key1) {
+                options2[key2] = Object.assign(options2[key2], options[key1])
+                delete (options[key1])
+                break
+              }
+            }
+          }
+        }
+        Object.assign(options2, options)
+        return options2
       }
     }
   })

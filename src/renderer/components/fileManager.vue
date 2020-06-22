@@ -1,7 +1,7 @@
 <template>
   <div class="file-list-box">
     <div
-      ref="fileList"
+      ref="filelist"
       class="file-list"
       @mouseenter="showScrollBar"
       @mouseleave="hideScrollBar"
@@ -15,11 +15,11 @@
         ref="vueScroll"
         :ops="scrollBarOptions"
       >
-        <div :style="fileListContentStyle">
+        <div>
           <div
             v-for="(file, idx) in fileList"
             :key="idx"
-            :ref="`fileItem${idx}`"
+            :ref="`fileitem${idx}`"
             class="file-item"
             :title="file.path"
             @click="handleFileClick(file, idx)"
@@ -28,22 +28,28 @@
             <span class="file-name">{{ file.name }}</span>
           </div>
         </div>
-        <div
-          class="drag-resize"
-          @mousedown="dragResize"
-        />
       </vue-scroll>
+      <drag-resize
+        :element="$refs.filelist"
+        @resizing="handleResizing"
+        @resized="handleResized"
+      />
     </div>
   </div>
 </template>
 
 <script>
+import dragResize from 'components/dragResize.vue'
+
 const fs = require('fs-extra')
 const PATH = require('path')
 
 const log = console.log
 
 export default {
+  components: {
+    dragResize
+  },
   props: {
     targetDir: {
       type: String,
@@ -52,10 +58,6 @@ export default {
     resizeWidth: {
       type: Number,
       default: 4
-    },
-    scrollBarOps: {
-      type: Object,
-      default: () => {}
     }
   },
   data () {
@@ -66,38 +68,12 @@ export default {
       selectedFilesIdx: [],
       fileList: [],
       listingDir: true,
-      resizing: false,
       currentDir: this.targetDir,
-      scrollBarOptions: {
-        scrollPanel: {
-          scrollingX: false,
-          scrollingY: true,
-          speed: 0,
-          verticalNativeBarPos: 'right'
-        },
-        bar: {
-          background: '#000000',
-          opacity: 0.3,
-          specifyBorderRadius: '0px',
-          size: '10px',
-          showDelay: 500,
-          keepShow: false,
-          disable: false
-        },
-        rail: {
-          size: '10px',
-          specifyBorderRadius: '0px',
-          gutterOfEnds: null,
-          gutterOfSide: '4px',
-          keepShow: false
-        }
-      }
+      scrollBarOptions: this.$bus.mixinScrollBarOptions()
     }
   },
   computed: {
-    fileListContentStyle () {
-      return this.resizing ? 'pointer-events: none;' : ''
-    }
+
   },
   watch: {
     currentDir (dirPath) {
@@ -108,10 +84,17 @@ export default {
     this.watchKeyEvent()
   },
   created () {
-    this.mixinScrollBarOptions()
     this.initialCurrentDir()
   },
   methods: {
+    handleResizing () {
+      this.scrollBarOptions.bar.disable = true
+      this.$refs.vueScroll.$el.style.pointerEvents = 'none'
+    },
+    handleResized () {
+      this.scrollBarOptions.bar.disable = false
+      this.$refs.vueScroll.$el.style.pointerEvents = ''
+    },
     initialCurrentDir () {
       setImmediate(() => { if (!this.currentDir) this.currentDir = this.$bus.appGetPath('desktop') })
     },
@@ -179,7 +162,6 @@ export default {
           { label: '检查(N)' }
         ],
         event,
-        customClass: 'class-a',
         zIndex: 3,
         minWidth: 230,
         el: this.$refs[`fileItem${idx}`][0]
@@ -205,23 +187,7 @@ export default {
         throw new Error(err)
       }
     },
-    mixinScrollBarOptions () {
-      const options1 = this.scrollBarOps
-      if (options1 && Object.keys(options1).length > 0) {
-        const options2 = this.scrollBarOptions
-        for (const key1 in options1) {
-          for (const key2 in options2) {
-            if (key2 === key1) {
-              options2[key2] = Object.assign(options2[key2], options1[key1])
-              delete (options1[key1])
-              break
-            }
-          }
-        }
-        Object.assign(options2, options1)
-        this.scrollBarOptions = options2
-      }
-    },
+
     selectFile (file, idx) {
       const select = (multiple) => {
         this.selectedFileIdx = idx
@@ -282,37 +248,10 @@ export default {
             break
         }
       }
-      document.onkeydown = (e) => {
-        setKeyStatus(e.keyCode, true)
-      }
-      document.onkeyup = (e) => {
-        setKeyStatus(e.keyCode, false)
-      }
-    },
-    dragResize (e) {
-      const clearEvents = e => {
-        document.onmouseup = undefined
-        document.onmousemove = undefined
-        document.onmouseup = undefined
-        document.onmouseout = undefined
-        document.body.style.cursor = 'auto'
-        this.scrollBarOptions.bar.disable = false
-        this.resizing = false
-      }
-      const stopDrag = e => clearEvents(e)
-      const initDragEvents = e => {
-        document.onmouseleave = () => stopDrag(e)
-        document.onmouseup = e => stopDrag(e)
-        document.onmousemove = e => {
-          const width = this.$refs.fileList.clientWidth
-          this.$refs.fileList.style.width = width + e.movementX + 'px'
-        }
-      }
-      this.scrollBarOptions.bar.disable = true
-      this.resizing = true
-      document.body.style.cursor = 'ew-resize'
-      initDragEvents(e)
+      document.onkeydown = (e) => setKeyStatus(e.keyCode, true)
+      document.onkeyup = (e) => setKeyStatus(e.keyCode, false)
     }
+
   }
 }
 </script>
@@ -351,15 +290,6 @@ export default {
   background-color: #f3f3f3;
 }
 
-.drag-resize {
-  cursor: ew-resize;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 4px;
-}
-
 .file-list:hover .__bar-is-vertical {
   display: none !important;
 }
@@ -368,10 +298,9 @@ export default {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  height: 22px;
   cursor: pointer;
   padding: 0 10px;
-  color: #616161;
+  line-height: 28px;
 }
 
 .file-item:hover {
