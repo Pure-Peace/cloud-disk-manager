@@ -106,6 +106,7 @@ export default {
   },
   watch: {
     currentDir (dirPath) {
+      this.clearSelection()
       setImmediate(async () => { this.fileList = await this.listdir(dirPath) })
     },
     '$bus.isBlur': {
@@ -125,6 +126,12 @@ export default {
     log(this.fileInfo)
   },
   methods: {
+    clearSelection () {
+      this.selectedFile = undefined
+      this.selectedFileIdx = undefined
+      this.selectedFilesIdx = []
+      this.fileList = []
+    },
     handleResizing () {
       this.scrollBarOptions.bar.disable = true
       this.$refs.vueScroll.$el.style.pointerEvents = 'none'
@@ -241,8 +248,9 @@ export default {
 
       const unselect = () => {
         this.selectedFileIdx = null
-        this.selectedFile = null
-        this.selectedFilesIdx.splice(this.selectedFilesIdx.indexOf(idx), 1)
+        const idxInselectedFiles = this.selectedFilesIdx.indexOf(idx)
+        this.selectedFilesIdx.splice(idxInselectedFiles, 1)
+        this.selectedFile = this.fileList[this.selectedFilesIdx[idxInselectedFiles - 1]]
         target.className = target.className.replace(' file-selected', '')
         this.$emit('fileUnselected', file, idx)
         log(idx, file, file.name, 'unselected')

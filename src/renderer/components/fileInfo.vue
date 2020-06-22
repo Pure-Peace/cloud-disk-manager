@@ -158,12 +158,9 @@ export default {
     padding: 4px 8px;
     color: #000000;
     margin-top: 8px;
-
+    user-select: text;
     background-color: #bbdefb;
   }
 }
 
-div {
-  user-select: text;
-}
 </style>
