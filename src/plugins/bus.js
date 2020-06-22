@@ -63,28 +63,30 @@ const install = (Vue, options) => {
           title: '百度网盘'
         }
         ],
-        scrollBarOptions: {
-          scrollPanel: {
-            scrollingX: false,
-            scrollingY: true,
-            speed: 0,
-            verticalNativeBarPos: 'right'
-          },
-          bar: {
-            background: '#000000',
-            opacity: 0.3,
-            specifyBorderRadius: '0px',
-            size: '10px',
-            showDelay: 500,
-            keepShow: false,
-            disable: false
-          },
-          rail: {
-            size: '10px',
-            specifyBorderRadius: '0px',
-            gutterOfEnds: null,
-            gutterOfSide: '4px',
-            keepShow: false
+        scrollBarOptions: () => {
+          return {
+            scrollPanel: {
+              scrollingX: false,
+              scrollingY: true,
+              speed: 0,
+              verticalNativeBarPos: 'right'
+            },
+            bar: {
+              background: '#000000',
+              opacity: 0.3,
+              specifyBorderRadius: '0px',
+              size: '10px',
+              showDelay: 500,
+              keepShow: false,
+              disable: false
+            },
+            rail: {
+              size: '10px',
+              specifyBorderRadius: '0px',
+              gutterOfEnds: null,
+              gutterOfSide: '4px',
+              keepShow: false
+            }
           }
         }
       }
@@ -154,7 +156,7 @@ const install = (Vue, options) => {
       },
       mixinScrollBarOptions (options) {
         options = options || {}
-        const options2 = this.scrollBarOptions
+        const options2 = this.scrollBarOptions()
         if (options && Object.keys(options).length > 0) {
           for (const key1 in options) {
             for (const key2 in options2) {
