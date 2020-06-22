@@ -1,6 +1,7 @@
 <template>
   <div
     id="topbar-box"
+    ref="topbar"
     :style="`height: ${$bus.topbarHeight}px`"
   >
     <div id="topbar-title">
@@ -36,9 +37,21 @@ export default {
   components: {
     controlButton
   },
+  props: {
+    blur: {
+      type: Boolean,
+      default: false
+    }
+  },
   data () {
     return {
       win: this.$electron.remote.getCurrentWindow()
+    }
+  },
+  watch: {
+    blur (val) {
+      if (val) this.$refs.topbar.className += 'on-blur'
+      else this.$refs.topbar.className = ''
     }
   },
   methods: {
@@ -53,6 +66,10 @@ export default {
     display: flex;
     -webkit-app-region: drag;
     user-select: none;
+}
+
+.on-blur {
+  //filter: brightness(.9);
 }
 
 #topbar-title {

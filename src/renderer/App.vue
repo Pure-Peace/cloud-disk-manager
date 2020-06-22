@@ -1,7 +1,10 @@
 <template>
   <div id="app">
     <custom-modal name="global-modal" />
-    <topbar ref="topbar" />
+    <topbar
+      ref="topbar"
+      :blur="$bus.isBlur"
+    />
     <div
       id="app-content"
       :style="appContentHeight"

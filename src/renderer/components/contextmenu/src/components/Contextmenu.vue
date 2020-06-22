@@ -24,6 +24,11 @@ export default {
       mouseListening: false
     }
   },
+  watch: {
+    '$bus.isBlur': {
+      handler: function (val) { if (val) this.$destroy() }
+    }
+  },
   mounted () {
     const SubmenuConstructor = Vue.component(COMPONENT_NAME)
     this.mainMenuInstance = new SubmenuConstructor()
@@ -106,7 +111,6 @@ export default {
         document.addEventListener('mousedown', this.mouseDownListener)
         document.addEventListener('mousewheel', this.mousewheelListener)
         document.addEventListener('DOMMouseScroll', this.mousewheelListener)
-        document.addEventListener('blur', () => { console.log('ssdsd') })
         this.mouseListening = true
       }
     },
@@ -116,7 +120,6 @@ export default {
         document.removeEventListener('mousedown', this.mouseDownListener)
         document.removeEventListener('mousewheel', this.mousewheelListener)
         document.removeEventListener('DOMMouseScroll', this.mousewheelListener)
-        document.removeEventListener('blur', () => { console.log('ssdsd') })
         this.mouseListening = false
       }
     }

@@ -7,15 +7,14 @@ const install = (Vue, options) => {
         process,
         sep: path.sep,
         set: Vue.set,
+        isFocus: Boolean,
+        isBlur: Boolean,
         getWindow: Function,
         getSubService: Function,
         appManager: Object,
-        // electron dialog
-        dialog: Function,
-        // electronId id
-        electronId: Number,
-        // electron window
-        win: Object,
+        dialog: Function, // electron dialog
+        electronId: Number, // electron id
+        win: Object, // this electron window
         router: options.router,
         appName: 'Cloud Disk Manager',
         topbarHeight: 70,
@@ -93,15 +92,29 @@ const install = (Vue, options) => {
       }
     },
     created () {
-      const appManager = this.getAppManager()
-      this.appManager = appManager
-      this.getSubService = appManager.getSubService
-      this.getWindow = appManager.getWindow
-      this.win = this.$electron.remote.getCurrentWindow()
-      this.electronId = this.win.id
-      this.dialog = this.$electron.remote.dialog
+      this.objectsInitial()
+      this.eventsInitial()
     },
     methods: {
+      objectsInitial () {
+        const appManager = this.getAppManager()
+        this.appManager = appManager
+        this.getSubService = appManager.getSubService
+        this.getWindow = appManager.getWindow
+        this.win = this.$electron.remote.getCurrentWindow()
+        this.electronId = this.win.id
+        this.dialog = this.$electron.remote.dialog
+      },
+      eventsInitial () {
+        this.win.on('blur', () => {
+          this.isBlur = true
+          this.isFocus = false
+        })
+        this.win.on('focus', () => {
+          this.isFocus = true
+          this.isBlur = false
+        })
+      },
       getAppManager () {
         return this.$electron.remote.getGlobal('appManager')
       },

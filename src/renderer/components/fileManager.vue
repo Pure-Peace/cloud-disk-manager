@@ -78,6 +78,14 @@ export default {
   watch: {
     currentDir (dirPath) {
       setImmediate(async () => { this.fileList = await this.listdir(dirPath) })
+    },
+    '$bus.isBlur': {
+      handler: function (val) {
+        if (val) {
+          this.onCtrl = false
+          this.onShift = false
+        }
+      }
     }
   },
   mounted () {
@@ -164,7 +172,7 @@ export default {
         event,
         zIndex: 3,
         minWidth: 230,
-        el: this.$refs[`fileItem${idx}`][0]
+        el: this.$refs[`fileitem${idx}`][0]
       })
     },
 
@@ -208,12 +216,12 @@ export default {
 
       const unselectAll = () => {
         this.selectedFilesIdx.forEach(fileIdx => {
-          const target = this.$refs[`fileItem${fileIdx}`][0]
+          const target = this.$refs[`fileitem${fileIdx}`][0]
           target.className = target.className.replace(' file-selected', '')
         })
       }
 
-      const target = this.$refs[`fileItem${idx}`][0]
+      const target = this.$refs[`fileitem${idx}`][0]
       const selected = this.selectedFilesIdx.includes(idx)
       // multiple select
       if (this.onCtrl) {
@@ -251,7 +259,6 @@ export default {
       document.onkeydown = (e) => setKeyStatus(e.keyCode, true)
       document.onkeyup = (e) => setKeyStatus(e.keyCode, false)
     }
-
   }
 }
 </script>
@@ -287,7 +294,6 @@ export default {
   height: 100%;
   max-width: 100%;
   min-width: 80px;
-  background-color: #f3f3f3;
 }
 
 .file-list:hover .__bar-is-vertical {
