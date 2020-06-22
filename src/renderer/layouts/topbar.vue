@@ -53,9 +53,6 @@ export default {
       if (val) this.$refs.topbar.className += 'on-blur'
       else this.$refs.topbar.className = ''
     }
-  },
-  methods: {
-
   }
 }
 </script>
