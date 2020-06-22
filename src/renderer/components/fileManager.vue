@@ -123,7 +123,7 @@ export default {
         name: PATH.basename(path),
         path,
         dir: PATH.dirname(path),
-        ext: PATH.extname(name),
+        ext: PATH.extname(path),
         initialed: false
       }
       try {
