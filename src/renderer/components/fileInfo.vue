@@ -1,17 +1,23 @@
 <template>
   <div class="file-detail-box">
-    <div v-show="!file">
-      请选择文件
-    </div>
-    <div
-      v-if="file"
-      class="file-detail-item"
-    >
-      <div class="file-detail-name">
-        {{ file.name }}
-      </div>
-    </div>
     <vue-scroll :ops="scrollBarOptions">
+      <div v-show="!file">
+        请选择文件
+      </div>
+      <div
+        v-if="file"
+        class="file-info-head"
+      >
+        <div class="file-icon-box">
+          <svg-icon
+            class="file-icon"
+            :icon-class="file.iconClass"
+          />
+        </div>
+        <div class="file-detail-name">
+          {{ file.name }}
+        </div>
+      </div>
       <div
         v-if="file"
         class="file-detail-block"
@@ -19,13 +25,13 @@
         <div class="file-detail-content">
           <div class="file-detail-item">
             <div>类型:</div>
-            <div>{{ utils.getFileType (file) }}</div>
+            <div>{{ file.type }}</div>
           </div>
 
           <div class="file-detail-item">
             <div>大小:</div>
             <div v-if="file.size">
-              {{ utils.sizeFormat(file.size) }}
+              {{ file.sizeFormatted }}
             </div>
             <div v-else>
               未计算
@@ -38,6 +44,14 @@
           >
             <div>文件后缀:</div>
             <div>{{ file.ext }}</div>
+          </div>
+
+          <div
+            v-if="file.mime"
+            class="file-detail-item"
+          >
+            <div>MIME:</div>
+            <div>{{ file.mime }}</div>
           </div>
         </div>
         <div class="file-detail-content">
@@ -55,12 +69,12 @@
         </div>
         <div class="file-detail-content">
           <div
-            v-for="(time, key) in utils.fileTimes(file)"
-            :key="`file${key}`"
+            v-for="timeType in file.timeTypes"
+            :key="`file-${timeType}`"
             class="file-detail-item"
           >
-            <div>{{ utils.timeTitleFormat(key) }}:</div>
-            <div>{{ utils.timeFormat(time) }}</div>
+            <div>{{ file.timeTypeFormatted(timeType) }}:</div>
+            <div>{{ file.timeFormatted(timeType) }}</div>
           </div>
         </div>
       </div>
@@ -100,10 +114,21 @@ export default {
 
 <style lang="less" scoped>
 @import "../themes/light.less";
+.file-icon-box {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.file-icon {
+  min-height: 3rem;
+  min-width: 3rem;
+  height: 3rem;
+  width: 3rem;
+}
 
 .file-detail-box {
   flex: 1;
-  //background-color: #f1f2f6;
   border-left: 1px dashed #d5d8e3;
   min-width: 200px;
 }
@@ -123,14 +148,19 @@ export default {
   background-color: #e8eaf6;
   flex: 1;
   display: flex;
+  user-select: text;
   justify-content: center;
   align-items: center;
+}
+
+.file-info-head {
+  padding: 10px;
 }
 
 .file-detail-item {
   display: flex;
   font-size: 13px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-self: baseline;
   justify-content: space-between;
 
@@ -156,10 +186,10 @@ export default {
     margin-left: 6px;
     border-radius: 4px;
     padding: 4px 8px;
-    color: #000000;
+    //color: @white;
     margin-top: 8px;
     user-select: text;
-    background-color: #bbdefb;
+    //background-color: @primary;
   }
 }
 

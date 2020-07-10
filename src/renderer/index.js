@@ -17,7 +17,7 @@ import utils from 'plugins/utils'
 import backend from 'backend/resources'
 import Contextmenu from 'components/contextmenu/'
 import SvgIcon from 'components/svgIcon/index.vue'
-import 'components/svgIcon'
+import iconList from 'components/svgIcon'
 
 // theme styles
 import 'themes/global.less'
@@ -60,6 +60,7 @@ Vue.use(VueBus, { router })
 Vue.use(Contextmenu)
 Vue.component('svg-icon', SvgIcon)
 Vue.prototype.$backend = backend
+Vue.prototype.$iconList = iconList
 Vue.prototype.$moment = moment
 
 const params = utils.parseUrlSearch(window.location.search)

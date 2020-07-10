@@ -65,6 +65,9 @@ const install = (Vue, options) => {
         ],
         scrollBarOptions: () => {
           return {
+            vuescroll: {
+              detectResize: true
+            },
             scrollPanel: {
               scrollingX: false,
               scrollingY: true,
@@ -124,7 +127,7 @@ const install = (Vue, options) => {
         let unit
         units = units || ['B', 'KB', 'MB', 'GB', 'TB']
         while ((unit = units.shift()) && size > 1024) { size /= 1024 }
-        return (unit === 'B' ? size : size.toFixed(!digits ? 2 : digits)) + unit
+        return (unit === 'B' ? size : size.toFixed(!digits ? 2 : digits)) + ' ' + unit
       },
       timeFormat (time) {
         return moment(time).format('YYYY-MM-DD HH:mm:ss')
