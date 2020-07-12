@@ -16,8 +16,13 @@
 </template>
 
 <script>
+import File from 'components/file.js'
+
 const chokidar = require('chokidar')
 const log = console.log
+
+const fs = require('fs-extra')
+const PATH = require('path')
 
 export default {
   data () {
@@ -81,6 +86,19 @@ export default {
               e.echo('initialerror', err)
               throw new Error(err)
             }
+          }
+        },
+        {
+          event: 'listDir',
+          handler: async (e, arg) => {
+            const dirPath = arg.dirPath
+            const initialFile = (path) => new File(path)
+            const fileList = await Promise.all(
+              fs.readdirSync(dirPath).map(
+                async (fileName) => await initialFile(PATH.join(dirPath, fileName))
+              )
+            )
+            e.echo(arg.flag, { fileList })
           }
         },
         {
@@ -155,7 +173,7 @@ export default {
       this.clients[id][key] = value
     },
     sendTo (id, channel, data = 'recived') {
-      channel = this.serviceName + channel
+      // channel = this.serviceName + channel
       try {
         this.$electron.ipcRenderer.sendTo(id, channel, data)
         this.totalSend += 1
@@ -187,7 +205,7 @@ export default {
 
           try {
             item.handler({
-              echo: (channel, ...data) => { this.sendTo(id, channel, data) },
+              echo: (channel, data) => { this.sendTo(id, channel, data) },
               setClient: (key, value) => { this.setClient(id, key, value) },
               clearClient: () => { this.clients[id] = {} },
               get client () { return that.clients[id] },

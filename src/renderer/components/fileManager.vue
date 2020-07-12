@@ -1,5 +1,5 @@
 <template>
-  <div class="file-list-box">
+  <div class="file-manager-box">
     <div
       ref="filelist"
       class="file-list"
@@ -38,66 +38,83 @@
           <span>前进</span>
         </div>
         <div
+          class="folder-button"
+          title="刷新"
+          @click="handleRefreshFolder"
+        >
+          <span style="padding: 0 5px;">
+            <svg-icon icon-class="refresh" />
+          </span>
+        </div>
+        <div
           class="file-currentdir"
           :title="currentDir"
         >
           {{ currentDir }}
         </div>
       </div>
-      <vue-scroll
-        ref="vueScroll"
-        :ops="scrollBarOptions"
-        @handle-resize="visibleAeraResize"
-        @handle-scroll="visibleAeraScroll"
-      >
-        <div
-          ref="fileListContent"
-          class="file-list-content"
+      <div class="file-list-box">
+        <vue-element-loading
+          :active="listingDir"
+          spinner="spinner"
+          text="加载中..."
+          color="#576AD8"
+        />
+        <vue-scroll
+          ref="vueScroll"
+          :ops="scrollBarOptions"
+          @handle-resize="visibleAeraResize"
+          @handle-scroll="visibleAeraScroll"
         >
           <div
-            v-for="(file, idx) in visibleFileList"
-            :key="idx"
-            :ref="`fileitem${idx}`"
-            class="file-item"
-            :title="file.path"
-            @click="handleFileClick(file, idx)"
-            @dblclick="handleDoubleClick(file, idx)"
-            @contextmenu.prevent="showContextmenu($event, file, idx)"
+            ref="fileListContent"
+            class="file-list-content"
           >
-            <div class="file-icon-box">
-              <svg-icon
-                class="file-icon"
-                :icon-class="file.iconClass"
-              />
-            </div>
-            <div class="file-self-box">
-              <div class="file-name">
-                {{ file.name }}
+            <div
+              v-for="(file, idx) in visibleFileList"
+              :key="idx"
+              :ref="`fileitem${idx}`"
+              class="file-item"
+              :title="file.path"
+              @click="handleFileClick(file, idx)"
+              @dblclick="handleDoubleClick(file, idx)"
+              @contextmenu.prevent="showContextmenu($event, file, idx)"
+            >
+              <div class="file-icon-box">
+                <svg-icon
+                  class="file-icon"
+                  :icon-class="file.iconClass"
+                />
               </div>
-              <div class="file-info-box">
-                <div class="file-info">
-                  {{ file.type }}
+              <div class="file-self-box">
+                <div class="file-name">
+                  {{ file.name }}
                 </div>
-                <div class="file-info">
-                  {{ file.timeTypeFormatted('ctime') }} {{ file.timeFormatted('ctime') }}
-                </div>
-                <div
-                  v-if="file.isFile"
-                  class="file-info"
-                >
-                  {{ file.sizeFormatted }}
-                </div>
-                <div
-                  v-else
-                  class="file-info"
-                >
-                  未计算
+                <div class="file-info-box">
+                  <div class="file-info">
+                    {{ file.type }}
+                  </div>
+                  <div class="file-info">
+                    {{ file.timeTypeFormatted('ctime') }} {{ file.timeFormatted('ctime') }}
+                  </div>
+                  <div
+                    v-if="file.isFile"
+                    class="file-info"
+                  >
+                    {{ file.sizeFormatted }}
+                  </div>
+                  <div
+                    v-else
+                    class="file-info"
+                  >
+                    未计算
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </vue-scroll>
+        </vue-scroll>
+      </div>
       <drag-resize
         :element="$refs.filelist"
         @resizing="handleResizing"
@@ -112,17 +129,16 @@
 import dragResize from 'components/dragResize.vue'
 import fileInfo from 'components/fileInfo.vue'
 import utils from 'components/utils.js'
+import VueElementLoading from 'vue-element-loading'
 import File from 'components/file.js'
-
-const fs = require('fs-extra')
-const PATH = require('path')
 
 const log = console.log
 
 export default {
   components: {
     dragResize,
-    fileInfo
+    fileInfo,
+    VueElementLoading
   },
   props: {
     targetDir: {
@@ -145,7 +161,7 @@ export default {
       fileList: [],
       visibleCount: 0,
       visibleFileList: [],
-      listingDir: true,
+      listingDir: false,
       currentDir: this.targetDir,
       scrollBarOptions: this.$bus.mixinScrollBarOptions(),
       historys: {},
@@ -170,12 +186,7 @@ export default {
         log(this.historys, 'dirChangeHistorys')
       }
       historysHandler()
-
-      // 非阻塞列出变更后目录下的文件
-      setImmediate(async () => {
-        this.fileList = await this.listdir(currentDir)
-        this.$emit('folderChanged', currentDir)
-      })
+      this.handleRefreshFolder(currentDir)
     },
 
     // 文件列表变更
@@ -212,6 +223,22 @@ export default {
     this.initialCurrentDir()
   },
   methods: {
+    // 子服务处理器，高cpu、高io的操作丢给子服务，有效防止渲染进程阻塞！
+    chokidarHandler (channel, data, subServiceName = 'chokidarService') {
+      return new Promise(resolve => {
+        const start = Date.now()
+        // 获取子服务窗口id（子服务以第二个渲染进程的形式存在）
+        const subServiceId = this.$bus.getSubService(subServiceName).win.id
+        // 生成一个事件唯一id
+        const flag = this.$md5(Date.now() + this.$bus.win.id + subServiceId + channel)
+        this.$electron.ipcRenderer.sendTo(subServiceId, channel, Object.assign({ flag }, data))
+        this.$electron.ipcRenderer.once(flag, (e, arg) => {
+          log(`chokidarHandler event: ${flag} resolved, time spent: ${Date.now() - start}ms`)
+          resolve(arg)
+        })
+      })
+    },
+
     // 当1屏的大小发生变化时，重新计算1屏的可视数据量
     visibleAeraResize () {
       const resizedVisibleCount = Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
@@ -232,6 +259,16 @@ export default {
         // 加载1屏的数据，并附加过度滚动补偿数据
         this.visibleCount += Math.round(this.$refs.vueScroll.$el.clientHeight / 65) + Math.round(this.scrollLength / 65)
       }
+    },
+
+    // 刷新当前目录下的文件
+    handleRefreshFolder (dir) {
+      if (this.listingDir) return
+      // 非阻塞列出目录下的文件
+      setImmediate(async () => {
+        this.fileList = await this.listdir(this.currentDir)
+        this.$emit('folderChanged', this.currentDir)
+      })
     },
 
     // 前进到之前的目录（如果有）
@@ -337,25 +374,23 @@ export default {
       })
     },
 
-    // 列出当前目录下所有文件
+    // 非阻塞列出目录下所有文件及信息
     async listdir (dirPath) {
+      this.listingDir = true
       try {
         log(`listing directory [${dirPath}]...`)
         const start = Date.now()
-        const initialFile = (path) => new File(path)
-        this.listingDir = true
 
-        // 异步取出目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
-        const fileList = await Promise.all(
-          fs.readdirSync(dirPath).map(
-            async (fileName) => await initialFile(PATH.join(dirPath, fileName))
-          )
-        )
-        log(`directory listing completed. file total: ${fileList.length}, spent time: ${Date.now() - start}ms`)
+        // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
+        let { fileList } = await this.chokidarHandler('listDir', { dirPath })
+        // 由于上述过程完成的结果是通过ipc通信发送的，所以对象的方法将会丢失，因此在这里重建我们File类的方法
+        fileList = fileList.map(file => new File(file))
+
+        log(`directory listing completed. file total: ${fileList.length}, time spent: ${Date.now() - start}ms`)
         this.listingDir = false
         return fileList
       } catch (err) {
-        log(`filed when listing directory [${dirPath}]`)
+        log(`failed when listing directory [${dirPath}]`)
         this.listingDir = false
         throw new Error(err)
       }
@@ -450,12 +485,19 @@ export default {
   filter: brightness(.8);
 }
 
+.file-list-box {
+  overflow: hidden;
+  display: flex;
+  position: relative;
+}
+
 .file-list-topbar {
   padding: 0 5px;
   display: flex;
   align-items: center;
   border-bottom: 1px dashed #F1F2F6;
   height: 60px;
+  min-height: 60px;
   font-size: 12px;
   color: #616161;
   //box-shadow: 0 0px 4px rgba(55, 55, 77, 0.1);
@@ -472,7 +514,7 @@ export default {
   background-color: #F1F2F6;
 }
 
-.file-list-box {
+.file-manager-box {
   height: 100%;
   display: flex;
 }

@@ -6,6 +6,7 @@ import router from 'renderer/router'
 import store from 'renderer/store'
 import i18n from 'plugins/i18n'
 import vuescroll from 'renderer/plugins/vuescroll-native'
+import md5 from 'js-md5'
 
 // subservice components
 import Chokidar from 'renderer/Chokidar.vue'
@@ -62,6 +63,7 @@ Vue.component('svg-icon', SvgIcon)
 Vue.prototype.$backend = backend
 Vue.prototype.$iconList = iconList
 Vue.prototype.$moment = moment
+Vue.prototype.$md5 = md5
 
 const params = utils.parseUrlSearch(window.location.search)
 params && params.subservice ? initSubService() : initApp()

@@ -8,26 +8,29 @@ const log = console.log
 
 export default class File {
   constructor (path) {
-    this.initialed = false
-    this.path = path
-    this.name = PATH.basename(path)
-    this.dir = PATH.dirname(path)
-    this.ext = PATH.extname(path).replace('.', '')
-    this.mime = mime.getType(this.ext)
+    if (typeof path === 'object') Object.assign(this, path)
+    else {
+      this.initialed = false
+      this.path = path
+      this.name = PATH.basename(path)
+      this.dir = PATH.dirname(path)
+      this.ext = PATH.extname(path).replace('.', '')
+      this.mime = mime.getType(this.ext)
 
-    try {
-      const stats = fs.statSync(path)
-      Object.assign(this, stats)
+      try {
+        const stats = fs.statSync(path)
+        Object.assign(this, stats)
 
-      this.isDir = stats.isDirectory()
-      this.isFile = stats.isFile()
-      this.isFIFO = stats.isFIFO()
-      this.isSocket = stats.isSocket()
-      this.isBlockDevice = stats.isBlockDevice()
-      this.isCharacterDevice = stats.isCharacterDevice()
-      this.initialed = true
-    } catch (err) {
-      log(`failed when stat file: ${path},`, new Error(err))
+        this.isDir = stats.isDirectory()
+        this.isFile = stats.isFile()
+        this.isFIFO = stats.isFIFO()
+        this.isSocket = stats.isSocket()
+        this.isBlockDevice = stats.isBlockDevice()
+        this.isCharacterDevice = stats.isCharacterDevice()
+        this.initialed = true
+      } catch (err) {
+        log(`failed when stat file: ${path},`, new Error(err))
+      }
     }
   }
 
