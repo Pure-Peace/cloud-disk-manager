@@ -13,107 +13,109 @@
       </div>
     </div>
     <vue-scroll :ops="scrollBarOptions">
-      <div
-        v-show="!file"
-        class="file-non-select-file"
-      >
-        <div class="file-icon-box">
-          <svg-icon
-            class="file-icon"
-            icon-class="file-box"
-          />
-        </div>
-        <div class="file-detail-name">
-          请选择一个文件
-        </div>
-      </div>
-      <json-viewer
-        v-if="file && showJsonViews"
-        :data="file.getInfo(false)"
-      />
-      <div
-        v-if="file && !showJsonViews"
-        class="file-info-head"
-      >
-        <div class="file-icon-box">
-          <svg-icon
-            class="file-icon"
-            :icon-class="file.iconClass"
-          />
-        </div>
-        <div class="file-detail-name">
-          {{ file.name }}
-        </div>
-      </div>
-      <div
-        v-if="file && !showJsonViews"
-        class="file-detail-block"
-      >
-        <div class="file-detail-content">
-          <div class="file-detail-item">
-            <div>类型:</div>
-            <div>{{ file.type }}</div>
+      <div slot="scroll-content">
+        <div
+          v-show="!file"
+          class="file-non-select-file"
+        >
+          <div class="file-icon-box">
+            <svg-icon
+              class="file-icon"
+              icon-class="file-box"
+            />
           </div>
-
-          <div class="file-detail-item">
-            <div>大小:</div>
-            <div v-if="file.size">
-              {{ file.sizeFormatted }}
-            </div>
-            <div v-else>
-              未计算
-            </div>
-          </div>
-
-          <div
-            v-if="file.ext"
-            class="file-detail-item"
-          >
-            <div>文件后缀:</div>
-            <div>{{ file.ext }}</div>
-          </div>
-
-          <div
-            v-if="file.mime"
-            class="file-detail-item"
-          >
-            <div>MIME:</div>
-            <div>{{ file.mime }}</div>
+          <div class="file-detail-name">
+            请选择一个文件
           </div>
         </div>
-        <div class="file-detail-content">
-          <div class="file-detail-item">
-            <div>所在目录:</div>
-            <div>{{ file.dir }}</div>
+        <json-viewer
+          v-if="file && showJsonViews"
+          :data="file.getInfo(false)"
+        />
+        <div
+          v-if="file && !showJsonViews"
+          class="file-info-head"
+        >
+          <div class="file-icon-box">
+            <svg-icon
+              class="file-icon"
+              :icon-class="file.iconClass"
+            />
           </div>
-
-          <div
-            class="file-detail-item"
-          >
-            <div>完整路径:</div>
-            <div>{{ file.path }}</div>
+          <div class="file-detail-name">
+            {{ file.name }}
           </div>
         </div>
         <div
-          v-if="file.initialed"
-          class="file-detail-content"
+          v-if="file && !showJsonViews"
+          class="file-detail-block"
         >
-          <div
-            v-for="timeType in file.timeTypes"
-            :key="`file-${timeType}`"
-            class="file-detail-item"
-          >
-            <div>{{ file.timeTypeFormatted(timeType) }}:</div>
-            <div>{{ file.timeFormatted(timeType) }}</div>
+          <div class="file-detail-content">
+            <div class="file-detail-item">
+              <div>类型:</div>
+              <div>{{ file.type }}</div>
+            </div>
+
+            <div class="file-detail-item">
+              <div>大小:</div>
+              <div v-if="file.size">
+                {{ file.sizeFormatted }}
+              </div>
+              <div v-else>
+                未计算
+              </div>
+            </div>
+
+            <div
+              v-if="file.ext"
+              class="file-detail-item"
+            >
+              <div>文件后缀:</div>
+              <div>{{ file.ext }}</div>
+            </div>
+
+            <div
+              v-if="file.mime"
+              class="file-detail-item"
+            >
+              <div>MIME:</div>
+              <div>{{ file.mime }}</div>
+            </div>
           </div>
-        </div>
-        <div
-          v-if="!file.initialed"
-          class="file-detail-content"
-        >
-          <div class="file-detail-item">
-            <div>文件信息:</div>
-            <div>{{ file.note }}</div>
+          <div class="file-detail-content">
+            <div class="file-detail-item">
+              <div>所在目录:</div>
+              <div>{{ file.dir }}</div>
+            </div>
+
+            <div
+              class="file-detail-item"
+            >
+              <div>完整路径:</div>
+              <div>{{ file.path }}</div>
+            </div>
+          </div>
+          <div
+            v-if="file.initialed"
+            class="file-detail-content"
+          >
+            <div
+              v-for="timeType in file.timeTypes"
+              :key="`file-${timeType}`"
+              class="file-detail-item"
+            >
+              <div>{{ file.timeTypeFormatted(timeType) }}:</div>
+              <div>{{ file.timeFormatted(timeType) }}</div>
+            </div>
+          </div>
+          <div
+            v-if="!file.initialed"
+            class="file-detail-content"
+          >
+            <div class="file-detail-item">
+              <div>文件信息:</div>
+              <div>{{ file.note }}</div>
+            </div>
           </div>
         </div>
         <div style="height: 55px;" />
@@ -142,6 +144,9 @@ export default {
       utils,
       showJsonViews: false,
       scrollBarOptions: this.$bus.mixinScrollBarOptions({
+        vuescroll: {
+          detectResize: true
+        },
         bar: {
           specifyBorderRadius: '4px',
           size: '6px',
