@@ -27,6 +27,38 @@
           <div class="file-detail-name">
             请选择一个文件
           </div>
+          <div class="file-dirinfo-box">
+            <div
+              class="file-detail-item"
+            >
+              <div>当前目录:</div>
+              <div>{{ dir }}</div>
+            </div>
+            <div
+              class="file-detail-item"
+            >
+              <div>项目总数:</div>
+              <div>{{ fileList.length || '计算中...' }}</div>
+            </div>
+            <div
+              class="file-detail-item"
+            >
+              <div>目录数:</div>
+              <div>{{ dirCount || '计算中...' }}</div>
+            </div>
+            <div
+              class="file-detail-item"
+            >
+              <div>文件数:</div>
+              <div>{{ fileCount || '计算中...' }}</div>
+            </div>
+            <div
+              class="file-detail-item"
+            >
+              <div>估计目录大小:</div>
+              <div>{{ $bus.sizeFormat(sizeCalc) || '计算中...' }}</div>
+            </div>
+          </div>
         </div>
         <json-viewer
           v-if="file && showJsonViews"
@@ -62,6 +94,7 @@
                 {{ file.sizeFormatted }}
               </div>
               <div v-else>
+                fileList
                 未计算
               </div>
             </div>
@@ -137,6 +170,18 @@ export default {
     file: {
       type: Object,
       default: () => {}
+    },
+    selectedFiles: {
+      type: Array,
+      default: () => []
+    },
+    fileList: {
+      type: Array,
+      default: () => []
+    },
+    dir: {
+      type: String,
+      default: ''
     }
   },
   data () {
@@ -158,6 +203,17 @@ export default {
           gutterOfSide: '-2px'
         }
       })
+    }
+  },
+  computed: {
+    dirCount () {
+      return this.fileList.filter(file => file.isDir).length
+    },
+    fileCount () {
+      return this.fileList.filter(file => file.isFile).length
+    },
+    sizeCalc () {
+      return this.fileList.reduce((acc, file) => acc + file.size, 0)
     }
   }
 }
@@ -279,5 +335,11 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.file-dirinfo-box {
+  border-top: 1px dashed #d5d8e3;
+  margin: 25px 0;
+  padding: 15px 0;
 }
 </style>

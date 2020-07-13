@@ -121,7 +121,12 @@
         @resized="handleResized"
       />
     </div>
-    <file-info :file="selectedFile" />
+    <file-info
+      :file="selectedFile && selectedFile.file"
+      :file-list="fileList"
+      :selected-files="selectedFiles"
+      :dir="currentDir"
+    />
   </div>
 </template>
 
@@ -157,9 +162,8 @@ export default {
       utils,
       onCtrl: false,
       onShift: false,
-      selectedFile: undefined,
-      selectedFileIdx: undefined,
-      selectedFilesIdx: [],
+      selectedFile: {},
+      selectedFiles: [],
       fileList: [],
       visibleCount: 0,
       visibleFileList: [],
@@ -333,9 +337,8 @@ export default {
 
     // 清空所有当前文件选择
     clearSelection () {
-      this.selectedFile = undefined
-      this.selectedFileIdx = undefined
-      this.selectedFilesIdx = []
+      this.selectedFile = {}
+      this.selectedFiles = []
       this.fileList = []
     },
 
@@ -474,23 +477,22 @@ export default {
     handleSelectFile (file, idx) {
       // 选中
       const select = multiple => {
-        this.selectedFileIdx = idx
-        this.selectedFile = file
-        if (multiple) this.selectedFilesIdx.push(idx)
-        else this.selectedFilesIdx = [idx]
+        this.selectedFile = { idx, file }
+        if (multiple) this.selectedFiles.push({ idx, file })
+        else this.selectedFiles = [{ idx, file }]
+
         target.className += ' file-selected'
         this.$emit('fileSelected', file, idx)
+
         log(idx, file, file.name, 'selected')
       }
 
       // 取消选择
       const unselect = () => {
-        this.selectedFileIdx = null
-        const idxInselectedFiles = this.selectedFilesIdx.indexOf(idx)
-        this.selectedFilesIdx.splice(idxInselectedFiles, 1)
-        this.selectedFile = this.fileList[
-          this.selectedFilesIdx[idxInselectedFiles - 1]
-        ]
+        const sidx = this.selectedFiles.findIndex(item => item.idx === idx)
+        this.selectedFiles.splice(sidx, 1)
+        const selection = this.selectedFiles[sidx - 1]
+        this.selectedFile = selection && { idx, file: selection.file }
         target.className = target.className.replace(' file-selected', '')
         this.$emit('fileUnselected', file, idx)
         log(idx, file, file.name, 'unselected')
@@ -498,15 +500,16 @@ export default {
 
       // 取消选择所有
       const unselectAll = () => {
-        this.selectedFilesIdx.forEach(fileIdx => {
-          const target = this.$refs[`fileitem${fileIdx}`][0]
+        this.selectedFiles.forEach(item => {
+          const target = this.$refs[`fileitem${item.idx}`][0]
           target.className = target.className.replace(' file-selected', '')
         })
+        this.selectedFiles = []
       }
 
       // 获取节点及选中状态
       const target = this.$refs[`fileitem${idx}`][0]
-      const selected = this.selectedFilesIdx.includes(idx)
+      const selected = this.selectedFiles.find(item => item.idx === idx)
       // 按住ctrl进行多选处理
       if (this.onCtrl) {
         if (selected) unselect()
@@ -516,6 +519,8 @@ export default {
         if (!selected) {
           unselectAll()
           select()
+        } else {
+          this.selectedFile = selected
         }
       }
     },
