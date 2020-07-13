@@ -5,7 +5,7 @@
       class="file-list"
     >
       <div class="file-list-topbar">
-        <button
+        <div
           class="folder-button"
           title="选择目录"
           @click="handleFolderSelect"
@@ -14,8 +14,8 @@
             <svg-icon icon-class="dir" />
           </span>
           <span>目录</span>
-        </button>
-        <button
+        </div>
+        <div
           v-if="historys[currentDir] && historys[currentDir].from"
           class="folder-button"
           title="返回"
@@ -25,8 +25,8 @@
             <svg-icon icon-class="back-folder" />
           </span>
           <span>返回</span>
-        </button>
-        <button
+        </div>
+        <div
           v-if="historys[currentDir] && historys[currentDir].to"
           class="folder-button"
           title="前进"
@@ -36,8 +36,8 @@
             <svg-icon icon-class="ahead-folder" />
           </span>
           <span>前进</span>
-        </button>
-        <button
+        </div>
+        <div
           class="folder-button"
           title="刷新"
           @click="handleRefreshFolder"
@@ -45,7 +45,7 @@
           <span style="padding: 0 5px;">
             <svg-icon icon-class="refresh" />
           </span>
-        </button>
+        </div>
         <dir-path-bar
           :dir="currentDir"
           @changeDir="handleChangeDir"
@@ -553,6 +553,7 @@ export default {
   margin-left: 10px;
   cursor: pointer;
   min-height: 26px;
+  color: @primary;
 }
 
 .folder-button:hover {

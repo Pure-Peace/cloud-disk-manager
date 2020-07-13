@@ -94,7 +94,10 @@
             <div>{{ file.path }}</div>
           </div>
         </div>
-        <div class="file-detail-content">
+        <div
+          v-if="file.initialed"
+          class="file-detail-content"
+        >
           <div
             v-for="timeType in file.timeTypes"
             :key="`file-${timeType}`"
@@ -104,8 +107,17 @@
             <div>{{ file.timeFormatted(timeType) }}</div>
           </div>
         </div>
+        <div
+          v-if="!file.initialed"
+          class="file-detail-content"
+        >
+          <div class="file-detail-item">
+            <div>文件信息:</div>
+            <div>{{ file.note }}</div>
+          </div>
+        </div>
+        <div style="height: 55px;" />
       </div>
-      <div style="height: 55px;" />
     </vue-scroll>
   </div>
 </template>
