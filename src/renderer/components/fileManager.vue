@@ -199,7 +199,7 @@ export default {
   computed: {
     fileItemClass () {
       return (file) => {
-        return 'file-item' + (file.ext && this.filters[file.ext].status !== true ? ' hidden' : '')
+        return 'file-item' + (file.ext && this.filters[file.ext] && this.filters[file.ext].status !== true ? ' hidden' : '')
       }
     }
   },
@@ -255,7 +255,7 @@ export default {
     filters: {
       deep: true,
       handler: function (filters) {
-        if (!this.visibleCount) return
+        if (!this.visibleFileList.length) return
         // 计算过滤掉的文件数量
         const filtedCount = Object.values(filters).reduce((acc, filter) => {
           if (filter.status === false) acc += filter.count
