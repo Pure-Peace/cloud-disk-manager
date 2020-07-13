@@ -3,13 +3,12 @@
     <div class="file-info-control-bar">
       <div
         class="control-button"
-        title="切换到专业视图"
-        style="font-weight: bold;"
+        :title="`切换到${!showJsonViews ? '专业' : '一般'}视图`"
         @click="showJsonViews = !showJsonViews"
       >
-        <span>专业视图</span>
+        <span>{{ !showJsonViews ? '专业' : '一般' }}视图</span>
         <span style="padding: 0 5px;">
-          <svg-icon icon-class="pro-view" />
+          <svg-icon :icon-class="!showJsonViews ? 'pro-view' : 'view'" />
         </span>
       </div>
     </div>

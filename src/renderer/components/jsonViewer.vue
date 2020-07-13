@@ -4,6 +4,17 @@
       <div class="json-viewer-title">
         JSON视图
       </div>
+      <div
+        class="control-button"
+        title="复制JSON数据"
+        @click="handleCopyJson"
+      >
+        <span>{{ title }}</span>
+        <span style="padding: 0 5px">
+          <svg-icon
+            icon-class="copy"
+          /></span>
+      </div>
     </div>
     <vue-json-pretty
       style="user-select: text !important; margin-left: 20px;"
@@ -27,6 +38,20 @@ export default {
       type: Object,
       default: () => {}
     }
+  },
+  data () {
+    return {
+      title: '复制'
+    }
+  },
+  methods: {
+    handleCopyJson () {
+      this.$bus.clipboard.writeText(JSON.stringify(this.data))
+      this.title = '已复制'
+      setTimeout(() => {
+        this.title = '复制'
+      }, 3000)
+    }
   }
 }
 </script>
@@ -37,7 +62,7 @@ export default {
 .json-viewer-box {
   display: flex;
   flex-direction: column;
-  padding: 15px;
+  padding: 5px 15px;
 }
 
 .json-viewer-title-box {
@@ -50,5 +75,25 @@ export default {
   background-color: #F1F2F6;
   border-radius: 6px;
   font-size: 12px;
+  font-weight: bold;
+}
+
+.control-button {
+  white-space: nowrap;
+  background-color: #F1F2F6;
+  padding: 5px 8px;
+  border-radius: 4px;
+  transition: .2s ease;
+  margin-left: 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.control-button:hover {
+  filter: brightness(.9);
+}
+
+.control-button:active {
+  filter: brightness(.8);
 }
 </style>
