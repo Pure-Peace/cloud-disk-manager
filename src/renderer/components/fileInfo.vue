@@ -15,7 +15,7 @@
       <div
         v-if="file"
         class="control-button"
-        title="将当前文件取消选择（快捷方式：CTRL + 鼠标左键单击列表中的文件）"
+        title="将当前项目取消选择（快捷方式：CTRL + 鼠标左键单击列表中的项目）"
         @click="$emit('unselectFile', {idx: fileIdx, file})"
       >
         <span>取消选择</span>
@@ -27,7 +27,7 @@
     <vue-scroll :ops="scrollBarOptions">
       <div slot="scroll-content">
         <div
-          v-show="!file"
+          v-if="!file"
           class="file-non-select-file"
         >
           <div class="file-icon-box">
@@ -37,7 +37,7 @@
             />
           </div>
           <div class="file-detail-name">
-            请选择一个文件
+            请选择一个项目
           </div>
           <div class="file-dirinfo-box">
             <div class="file-detail-item">
@@ -58,7 +58,27 @@
             </div>
             <div class="file-detail-item">
               <div>估计目录大小:</div>
-              <div>{{ $bus.sizeFormat(sizeCalc) }}</div>
+              <div>{{ $bus.sizeFormat(sizeTotal) }}</div>
+            </div>
+          </div>
+          <div
+            v-if="fileCount"
+            class="file-dirinfo-box"
+          >
+            <div class="file-detail-name">
+              文件类型过滤器
+            </div>
+            <div class="file-filter-box">
+              <div
+                v-for="(fileFilter, ext) in fileTypeFilters"
+                :key="ext + 'filter'"
+                :class="fileTypeFilterButtonClass(fileFilter.status)"
+                :title="`文件类型：${ext}; 文件数量：${fileFilter.count}; ${fileFilter.status === true ? '已显示' : '已过滤'}`"
+                @click="fileFilter.status = !fileFilter.status"
+              >
+                <span class="file-filter-ext">{{ ext }}</span>
+                (<span class="file-filter-count">{{ fileFilter.count }}</span>)
+              </div>
             </div>
           </div>
         </div>
@@ -189,6 +209,11 @@ export default {
       file: undefined,
       fileIdx: undefined,
       showJsonViews: false,
+      filters: {},
+      dirCount: 0,
+      fileCount: 0,
+      sizeTotal: 0,
+      fileTypeFilters: {},
       scrollBarOptions: this.$bus.mixinScrollBarOptions({
         vuescroll: {
           detectResize: true
@@ -207,20 +232,38 @@ export default {
     }
   },
   computed: {
-    dirCount () {
-      return this.fileList.filter(file => file.isDir).length
-    },
-    fileCount () {
-      return this.fileList.filter(file => file.isFile).length
-    },
-    sizeCalc () {
-      return this.fileList.reduce((acc, file) => acc + file.size, 0)
+    fileTypeFilterButtonClass () {
+      return status => {
+        return (
+          'file-type-filter-button' +
+          (status === true ? ' file-type-filter-enabled' : '')
+        )
+      }
     }
   },
   watch: {
     selectedFile (selection) {
       this.file = selection && selection.file
       this.fileIdx = selection && selection.idx
+    },
+    async fileList (fileList) {
+      let dirCount = 0
+      let fileCount = 0
+      let sizeTotal = 0
+      const filters = {}
+      for (const file of fileList) {
+        if (file.isDir) dirCount++
+        if (file.isFile) fileCount++
+        sizeTotal += file.size
+
+        if (!file.ext) continue
+        if (file.ext in filters) filters[file.ext].count++
+        else filters[file.ext] = { count: 1, status: true }
+      }
+      this.dirCount = dirCount
+      this.fileCount = fileCount
+      this.sizeTotal = sizeTotal
+      this.fileTypeFilters = filters
     }
   }
 }
@@ -348,7 +391,49 @@ export default {
 
 .file-dirinfo-box {
   border-top: 1px dashed #d5d8e3;
-  margin: 25px 0;
+  margin-top: 25px;
+  padding-top: 15px;
+}
+
+.file-type-filter-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: #ffcdd2;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-right: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  transition: .2s ease;
+}
+
+.file-type-filter-button:hover {
+  filter: brightness(.9);
+}
+
+.file-type-filter-button:active {
+  filter: brightness(.8);
+}
+
+.file-type-filter-enabled {
+  background-color: #B2DFDB;
+}
+
+.file-filter-box {
+  display: flex;
+  justify-content: center;
   padding: 15px 0;
+  flex-wrap: wrap;
+}
+
+.file-filter-count {
+  margin: 0 2px;
+}
+
+.file-filter-ext {
+  font-weight: bold;
+  margin-right: 2px;
 }
 </style>
