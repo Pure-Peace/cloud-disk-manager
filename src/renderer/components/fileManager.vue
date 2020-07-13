@@ -5,7 +5,7 @@
       class="file-list"
     >
       <div class="file-list-topbar">
-        <div
+        <button
           class="folder-button"
           title="选择目录"
           @click="handleFolderSelect"
@@ -14,8 +14,8 @@
             <svg-icon icon-class="dir" />
           </span>
           <span>目录</span>
-        </div>
-        <div
+        </button>
+        <button
           v-if="historys[currentDir] && historys[currentDir].from"
           class="folder-button"
           title="返回"
@@ -25,8 +25,8 @@
             <svg-icon icon-class="back-folder" />
           </span>
           <span>返回</span>
-        </div>
-        <div
+        </button>
+        <button
           v-if="historys[currentDir] && historys[currentDir].to"
           class="folder-button"
           title="前进"
@@ -36,8 +36,8 @@
             <svg-icon icon-class="ahead-folder" />
           </span>
           <span>前进</span>
-        </div>
-        <div
+        </button>
+        <button
           class="folder-button"
           title="刷新"
           @click="handleRefreshFolder"
@@ -45,13 +45,11 @@
           <span style="padding: 0 5px;">
             <svg-icon icon-class="refresh" />
           </span>
-        </div>
-        <div
-          class="file-currentdir"
-          :title="currentDir"
-        >
-          {{ currentDir }}
-        </div>
+        </button>
+        <dir-path-bar
+          :dir="currentDir"
+          @changeDir="handleChangeDir"
+        />
       </div>
       <div class="file-list-box">
         <vue-element-loading
@@ -94,7 +92,9 @@
                   <div class="file-info">
                     {{ file.type }}
                   </div>
-                  <div class="file-info">
+                  <div
+                    class="file-info"
+                  >
                     {{ file.timeTypeFormatted('ctime') }} {{ file.timeFormatted('ctime') }}
                   </div>
                   <div
@@ -131,6 +131,7 @@ import fileInfo from 'components/fileInfo.vue'
 import utils from 'components/utils.js'
 import VueElementLoading from 'vue-element-loading'
 import File from 'components/file.js'
+import dirPathBar from 'components/dirPathBar.vue'
 
 const log = console.log
 
@@ -138,7 +139,8 @@ export default {
   components: {
     dragResize,
     fileInfo,
-    VueElementLoading
+    VueElementLoading,
+    dirPathBar
   },
   props: {
     targetDir: {
@@ -177,11 +179,13 @@ export default {
       // 目录变更历史记录处理，用于前进及后退
       const historysHandler = () => {
         if (beforeDir) {
-          if (!this.historys[beforeDir]) this.historys[beforeDir] = { to: currentDir }
-          else if (this.historys[beforeDir].from !== currentDir) { this.historys[beforeDir].to = currentDir }
+          if (!this.historys[beforeDir]) { this.historys[beforeDir] = { to: currentDir } } else if (this.historys[beforeDir].from !== currentDir) {
+            this.historys[beforeDir].to = currentDir
+          }
 
-          if (!this.historys[currentDir]) this.historys[currentDir] = { from: beforeDir }
-          else if (this.historys[currentDir].to !== beforeDir) { this.historys[currentDir].from = beforeDir }
+          if (!this.historys[currentDir]) { this.historys[currentDir] = { from: beforeDir } } else if (this.historys[currentDir].to !== beforeDir) {
+            this.historys[currentDir].from = beforeDir
+          }
         }
         log(this.historys, 'dirChangeHistorys')
       }
@@ -193,7 +197,8 @@ export default {
     fileList (fileList) {
       // 将文件内容区的最小高度设置为数据完全加载后的高度
       // 由于实际上列表数据是懒加载的，这样做可以使得滚动条的比例完整，让人一眼看不出来是懒加载
-      this.$refs.fileListContent.style.minHeight = `${this.fileList.length * 65}px`
+      this.$refs.fileListContent.style.minHeight = `${this.fileList.length *
+        65}px`
       this.visibleFileList = this.fileList.slice(0, this.visibleCount)
     },
 
@@ -216,13 +221,18 @@ export default {
     this.watchKeyEvent()
     this.$nextTick(() => {
       // 初始加载2屏的数据
-      this.visibleCount = Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
+      this.visibleCount =
+        Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
     })
   },
   created () {
     this.initialCurrentDir()
   },
   methods: {
+    // 地址栏目录变更处理
+    handleChangeDir (dir) {
+      this.currentDir = dir
+    },
     // 子服务处理器，高cpu、高io的操作丢给子服务，有效防止渲染进程阻塞！
     chokidarHandler (channel, data, subServiceName = 'chokidarService') {
       return new Promise(resolve => {
@@ -230,12 +240,21 @@ export default {
         // 获取子服务窗口id（子服务以第二个渲染进程的形式存在）
         const subServiceId = this.$bus.getSubService(subServiceName).win.id
         // 生成一个事件唯一id
-        const eventId = this.$md5(Date.now() + this.$bus.win.id + subServiceId + channel)
+        const eventId = this.$md5(
+          Date.now() + this.$bus.win.id + subServiceId + channel
+        )
         // 发送处理
-        this.$electron.ipcRenderer.sendTo(subServiceId, channel, Object.assign({ eventId }, data))
+        this.$electron.ipcRenderer.sendTo(
+          subServiceId,
+          channel,
+          Object.assign({ eventId }, data)
+        )
         // 等待处理完成
         this.$electron.ipcRenderer.once(eventId, (e, arg) => {
-          log(`chokidarHandler event: ${eventId} resolved, time spent: ${Date.now() - start}ms`)
+          log(
+            `chokidarHandler event: ${eventId} resolved, time spent: ${Date.now() -
+              start}ms`
+          )
           resolve(arg)
         })
       })
@@ -243,8 +262,9 @@ export default {
 
     // 当1屏的大小发生变化时，重新计算1屏的可视数据量
     visibleAeraResize () {
-      const resizedVisibleCount = Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
-      if (this.visibleCount < resizedVisibleCount) this.visibleCount = resizedVisibleCount
+      const resizedVisibleCount =
+        Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
+      if (this.visibleCount < resizedVisibleCount) { this.visibleCount = resizedVisibleCount }
     },
 
     // 滚动时懒加载
@@ -255,11 +275,15 @@ export default {
       this.lastScrollTop = vertical.scrollTop
 
       // 滚动累计长度大于1屏，且还有数据未加载时继续加载数据
-      if (this.scrollLength >= this.$refs.vueScroll.$el.clientHeight &&
-        this.visibleFileList.length < this.fileList.length) {
+      if (
+        this.scrollLength >= this.$refs.vueScroll.$el.clientHeight &&
+        this.visibleFileList.length < this.fileList.length
+      ) {
         this.scrollLength -= this.$refs.vueScroll.$el.clientHeight
         // 加载1屏的数据，并附加过度滚动补偿数据
-        this.visibleCount += Math.round(this.$refs.vueScroll.$el.clientHeight / 65) + Math.round(this.scrollLength / 65)
+        this.visibleCount +=
+          Math.round(this.$refs.vueScroll.$el.clientHeight / 65) +
+          Math.round(this.scrollLength / 65)
       }
     },
 
@@ -296,13 +320,15 @@ export default {
 
     // 选择目录，等效于同步方法
     async handleFolderSelect () {
-      const selection = await this.$bus.dialog.showOpenDialog(
-        this.$bus.win, {
-          properties: ['openDirectory', 'showHiddenFiles', 'treatPackageAsDirectory'],
-          message: '请选择您要打开的目录'
-        }
-      )
-      if (!selection.canceled && selection.filePaths[0]) this.currentDir = selection.filePaths[0]
+      const selection = await this.$bus.dialog.showOpenDialog(this.$bus.win, {
+        properties: [
+          'openDirectory',
+          'showHiddenFiles',
+          'treatPackageAsDirectory'
+        ],
+        message: '请选择您要打开的目录'
+      })
+      if (!selection.canceled && selection.filePaths[0]) { this.currentDir = selection.filePaths[0] }
     },
 
     // 清空所有当前文件选择
@@ -327,7 +353,9 @@ export default {
 
     // 初始化文件目录，默认为桌面
     initialCurrentDir () {
-      setImmediate(() => { if (!this.currentDir) this.currentDir = this.$bus.appGetPath('desktop') })
+      setImmediate(() => {
+        if (!this.currentDir) this.currentDir = this.$bus.appGetPath('desktop')
+      })
     },
 
     // 文件项目右键单击上下文菜单
@@ -372,9 +400,7 @@ export default {
       ]
 
       // 文件类型专属菜单项
-      const fileMenuItems = [
-
-      ]
+      const fileMenuItems = []
       /*
       [        { label: '前进(F)', disabled: true },
         { label: '重新加载(R)', divided: true, icon: 'el-icon-refresh' },
@@ -407,7 +433,10 @@ export default {
 
       // 设置菜单
       this.$contextmenu({
-        items: [...(file.isDir ? dirMenuItems : fileMenuItems), ...publicMenuItems],
+        items: [
+          ...(file.isDir ? dirMenuItems : fileMenuItems),
+          ...publicMenuItems
+        ],
         event,
         zIndex: 3,
         minWidth: 230,
@@ -427,7 +456,11 @@ export default {
         // 由于上述过程完成的结果是通过ipc通信发送的，所以对象的方法将会丢失，因此在这里重建我们File类的方法
         fileList = fileList.map(file => new File(file))
 
-        log(`directory listing completed. file total: ${fileList.length}, time spent: ${Date.now() - start}ms`)
+        log(
+          `directory listing completed. file total: ${
+            fileList.length
+          }, time spent: ${Date.now() - start}ms`
+        )
         this.listingDir = false
         return fileList
       } catch (err) {
@@ -440,7 +473,7 @@ export default {
     // 选择文件处理
     handleSelectFile (file, idx) {
       // 选中
-      const select = (multiple) => {
+      const select = multiple => {
         this.selectedFileIdx = idx
         this.selectedFile = file
         if (multiple) this.selectedFilesIdx.push(idx)
@@ -455,7 +488,9 @@ export default {
         this.selectedFileIdx = null
         const idxInselectedFiles = this.selectedFilesIdx.indexOf(idx)
         this.selectedFilesIdx.splice(idxInselectedFiles, 1)
-        this.selectedFile = this.fileList[this.selectedFilesIdx[idxInselectedFiles - 1]]
+        this.selectedFile = this.fileList[
+          this.selectedFilesIdx[idxInselectedFiles - 1]
+        ]
         target.className = target.className.replace(' file-selected', '')
         this.$emit('fileUnselected', file, idx)
         log(idx, file, file.name, 'unselected')
@@ -499,8 +534,8 @@ export default {
             break
         }
       }
-      document.onkeydown = (e) => setKeyStatus(e.keyCode, true)
-      document.onkeyup = (e) => setKeyStatus(e.keyCode, false)
+      document.onkeydown = e => setKeyStatus(e.keyCode, true)
+      document.onkeyup = e => setKeyStatus(e.keyCode, false)
     }
   }
 }
@@ -510,20 +545,22 @@ export default {
 @import "../themes/light.less";
 .folder-button {
   white-space: nowrap;
-  background-color: #F1F2F6;
+  background-color: #f1f2f6;
   padding: 5px 8px;
   border-radius: 4px;
-  transition: .2s ease;
+  transition: 0.2s ease;
+  font-size: 12px;
   margin-left: 10px;
   cursor: pointer;
+  min-height: 26px;
 }
 
 .folder-button:hover {
-  filter: brightness(.9);
+  filter: brightness(0.9);
 }
 
 .folder-button:active {
-  filter: brightness(.8);
+  filter: brightness(0.8);
 }
 
 .file-list-box {
@@ -542,17 +579,6 @@ export default {
   font-size: 12px;
   color: #616161;
   //box-shadow: 0 0px 4px rgba(55, 55, 77, 0.1);
-
-}
-
-.file-currentdir {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  margin-left: 8px;
-  padding: 5px 15px;
-  border-radius: 4px;
-  background-color: #F1F2F6;
 }
 
 .file-manager-box {
@@ -588,7 +614,7 @@ export default {
   cursor: pointer;
   padding: 6px 10px;
   align-items: center;
-  border-bottom: 1px dashed #F1F2F6;
+  border-bottom: 1px dashed #f1f2f6;
 }
 
 .file-item:hover {
@@ -616,12 +642,11 @@ export default {
   font-family: "Segoe WPC", "Segoe UI", "Microsoft YaHei", sans-serif;
   line-height: 22px;
   padding: 0 5px;
-
 }
 
 .file-selected {
   color: #000000 !important;
-  background-color: #E4E6F1 !important;
+  background-color: #e4e6f1 !important;
 }
 
 .file-info-box {
@@ -644,7 +669,7 @@ export default {
 
 .contextmenu-active {
   color: #000000 !important;
-  background-color: #D8DAE5 !important;
+  background-color: #d8dae5 !important;
 }
 
 </style>

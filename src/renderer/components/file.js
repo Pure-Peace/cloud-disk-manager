@@ -29,6 +29,7 @@ export default class File {
         this.isCharacterDevice = stats.isCharacterDevice()
         this.initialed = true
       } catch (err) {
+        this.note = '权限不足'
         log(`failed when stat file: ${path},`, new Error(err))
       }
     }
