@@ -536,9 +536,9 @@ export default {
   padding: 0 5px;
   display: flex;
   align-items: center;
-  border-bottom: 1px dashed #F1F2F6;
-  height: 60px;
-  min-height: 60px;
+  border-bottom: 1px dashed #d5d8e3;
+  height: 55px;
+  min-height: 55px;
   font-size: 12px;
   color: #616161;
   //box-shadow: 0 0px 4px rgba(55, 55, 77, 0.1);

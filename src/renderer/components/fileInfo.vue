@@ -1,16 +1,28 @@
 <template>
   <div class="file-detail-box">
+    <div class="file-info-control-bar">
+      <div
+        class="control-button"
+        title="切换到专业视图"
+        style="font-weight: bold;"
+        @click="showJsonViews = !showJsonViews"
+      >
+        <span>专业视图</span>
+        <span style="padding: 0 5px;">
+          <svg-icon icon-class="pro-view" />
+        </span>
+      </div>
+    </div>
     <vue-scroll :ops="scrollBarOptions">
       <div v-show="!file">
         请选择文件
       </div>
       <json-viewer
-        v-if="file"
-        style="user-select: text;"
+        v-if="file && showJsonViews"
         :data="file.getInfo(false)"
       />
       <div
-        v-if="file"
+        v-if="file && !showJsonViews"
         class="file-info-head"
       >
         <div class="file-icon-box">
@@ -24,7 +36,7 @@
         </div>
       </div>
       <div
-        v-if="file"
+        v-if="file && !showJsonViews"
         class="file-detail-block"
       >
         <div class="file-detail-content">
@@ -83,6 +95,7 @@
           </div>
         </div>
       </div>
+      <div style="height: 55px;" />
     </vue-scroll>
   </div>
 </template>
@@ -105,6 +118,7 @@ export default {
   data () {
     return {
       utils,
+      showJsonViews: false,
       scrollBarOptions: this.$bus.mixinScrollBarOptions({
         bar: {
           specifyBorderRadius: '4px',
@@ -127,7 +141,8 @@ export default {
 .file-icon-box {
   display: flex;
   justify-content: center;
-  padding: 20px;
+  padding-top: 20px;
+  padding-bottom: 25px;
 }
 
 .file-icon {
@@ -161,6 +176,8 @@ export default {
   user-select: text;
   justify-content: center;
   align-items: center;
+  font-size: 13px;
+  font-weight: bold;
 }
 
 .file-info-head {
@@ -169,7 +186,7 @@ export default {
 
 .file-detail-item {
   display: flex;
-  font-size: 13px;
+  font-size: 12px;
   flex-wrap: nowrap;
   align-self: baseline;
   justify-content: space-between;
@@ -203,4 +220,30 @@ export default {
   }
 }
 
+.file-info-control-bar {
+  display: flex;
+  padding: 10px 15px;
+  border-bottom: 1px dashed #d5d8e3;
+  height: 55px;
+  align-items: center;
+}
+
+.control-button {
+  white-space: nowrap;
+  background-color: #F1F2F6;
+  padding: 5px 8px;
+  border-radius: 4px;
+  transition: .2s ease;
+  margin-right: 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.control-button:hover {
+  filter: brightness(.9);
+}
+
+.control-button:active {
+  filter: brightness(.8);
+}
 </style>
