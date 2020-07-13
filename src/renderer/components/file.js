@@ -92,4 +92,9 @@ export default class File {
   timeFormat (time) {
     return moment(time).format('YYYY-MM-DD HH:mm:ss')
   }
+
+  getInfo (json = true) {
+    const { initialed, ...info } = this
+    return json ? JSON.stringify(info) : info
+  }
 }

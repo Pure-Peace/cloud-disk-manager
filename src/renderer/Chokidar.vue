@@ -93,12 +93,13 @@ export default {
           handler: async (e, arg) => {
             const dirPath = arg.dirPath
             const initialFile = (path) => new File(path)
+            // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
             const fileList = await Promise.all(
               fs.readdirSync(dirPath).map(
                 async (fileName) => await initialFile(PATH.join(dirPath, fileName))
               )
             )
-            e.echo(arg.flag, { fileList })
+            e.echo(arg.eventId, { fileList })
           }
         },
         {

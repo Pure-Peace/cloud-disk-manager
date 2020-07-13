@@ -1,11 +1,13 @@
 import moment from 'moment'
 const path = require('path')
+const { clipboard } = require('electron')
 
 const install = (Vue, options) => {
   const Bus = new Vue({
     data () {
       return {
         process,
+        clipboard, // electron clipboard object
         sep: path.sep,
         set: Vue.set,
         isFocus: false,

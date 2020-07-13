@@ -78,7 +78,7 @@
               :title="file.path"
               @click="handleFileClick(file, idx)"
               @dblclick="handleDoubleClick(file, idx)"
-              @contextmenu.prevent="showContextmenu($event, file, idx)"
+              @contextmenu.prevent="fileShowContextmenu($event, file, idx)"
             >
               <div class="file-icon-box">
                 <svg-icon
@@ -230,10 +230,12 @@ export default {
         // 获取子服务窗口id（子服务以第二个渲染进程的形式存在）
         const subServiceId = this.$bus.getSubService(subServiceName).win.id
         // 生成一个事件唯一id
-        const flag = this.$md5(Date.now() + this.$bus.win.id + subServiceId + channel)
-        this.$electron.ipcRenderer.sendTo(subServiceId, channel, Object.assign({ flag }, data))
-        this.$electron.ipcRenderer.once(flag, (e, arg) => {
-          log(`chokidarHandler event: ${flag} resolved, time spent: ${Date.now() - start}ms`)
+        const eventId = this.$md5(Date.now() + this.$bus.win.id + subServiceId + channel)
+        // 发送处理
+        this.$electron.ipcRenderer.sendTo(subServiceId, channel, Object.assign({ eventId }, data))
+        // 等待处理完成
+        this.$electron.ipcRenderer.once(eventId, (e, arg) => {
+          log(`chokidarHandler event: ${eventId} resolved, time spent: ${Date.now() - start}ms`)
           resolve(arg)
         })
       })
@@ -328,45 +330,84 @@ export default {
       setImmediate(() => { if (!this.currentDir) this.currentDir = this.$bus.appGetPath('desktop') })
     },
 
-    // 右键菜单
-    showContextmenu (event, file, idx) {
+    // 文件项目右键单击上下文菜单
+    fileShowContextmenu (event, file, idx) {
+      // 共用菜单项
+      const publicMenuItems = [
+        {
+          label: '复制完整路径',
+          onClick: () => {
+            this.$bus.clipboard.writeText(file.path)
+          }
+        },
+        {
+          label: '复制所在路径',
+          onClick: () => {
+            this.$bus.clipboard.writeText(file.dir)
+          }
+        },
+        {
+          label: `复制${file.isDir ? '目录' : '文件'}名`,
+          onClick: () => {
+            this.$bus.clipboard.writeText(file.name)
+          }
+        },
+        {
+          label: '复制完整信息（JSON）',
+          onClick: () => {
+            this.$bus.clipboard.writeText(file.getInfo())
+          }
+        }
+      ]
+
+      // 目录类型专属菜单项
+      const dirMenuItems = [
+        {
+          label: '进入目录',
+          divided: true,
+          onClick: () => {
+            this.currentDir = file.path
+          }
+        }
+      ]
+
+      // 文件类型专属菜单项
+      const fileMenuItems = [
+
+      ]
+      /*
+      [        { label: '前进(F)', disabled: true },
+        { label: '重新加载(R)', divided: true, icon: 'el-icon-refresh' },
+        { label: '另存为(A)...' },
+        { label: '打印(P)...', icon: 'el-icon-printer' },
+        { label: '投射(C)...', divided: true },
+        {
+          label: '使用网页翻译(T)',
+          divided: true,
+          minWidth: 0,
+          children: [{ label: '翻译成简体中文' }, { label: '翻译成繁体中文' }]
+        },
+        {
+          label: '截取网页(R)',
+          minWidth: 0,
+          children: [
+            {
+              label: '截取可视化区域',
+              onClick: () => {
+                this.message = '截取可视化区域'
+                console.log('截取可视化区域')
+              }
+            },
+            { label: '截取全屏' }
+          ]
+        },
+        { label: '查看网页源代码(V)', icon: 'dir' },
+        { label: '检查(N)' }]
+        */
+
+      // 设置菜单
       this.$contextmenu({
-        items: [
-          {
-            label: '返回(B)',
-            onClick: () => {
-              this.message = '返回(B)'
-              console.log('返回(B)')
-            }
-          },
-          { label: '前进(F)', disabled: true },
-          { label: '重新加载(R)', divided: true, icon: 'el-icon-refresh' },
-          { label: '另存为(A)...' },
-          { label: '打印(P)...', icon: 'el-icon-printer' },
-          { label: '投射(C)...', divided: true },
-          {
-            label: '使用网页翻译(T)',
-            divided: true,
-            minWidth: 0,
-            children: [{ label: '翻译成简体中文' }, { label: '翻译成繁体中文' }]
-          },
-          {
-            label: '截取网页(R)',
-            minWidth: 0,
-            children: [
-              {
-                label: '截取可视化区域',
-                onClick: () => {
-                  this.message = '截取可视化区域'
-                  console.log('截取可视化区域')
-                }
-              },
-              { label: '截取全屏' }
-            ]
-          },
-          { label: '查看网页源代码(V)', icon: 'dir' },
-          { label: '检查(N)' }
-        ],
+        items: [...(file.isDir ? dirMenuItems : fileMenuItems), ...publicMenuItems],
         event,
         zIndex: 3,
         minWidth: 230,
