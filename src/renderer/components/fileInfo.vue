@@ -2,13 +2,25 @@
   <div class="file-detail-box">
     <div class="file-info-control-bar">
       <div
+        v-if="file && file.isFile"
         class="control-button"
-        :title="`切换到${!showJsonViews ? '专业' : '一般'}视图`"
+        :title="`将文件信息切换到${!showJsonViews ? '专业' : '一般'}视图显示`"
         @click="showJsonViews = !showJsonViews"
       >
         <span>{{ !showJsonViews ? '专业' : '一般' }}视图</span>
         <span style="padding: 0 5px;">
           <svg-icon :icon-class="!showJsonViews ? 'pro-view' : 'view'" />
+        </span>
+      </div>
+      <div
+        v-if="file"
+        class="control-button"
+        title="将当前文件取消选择（快捷方式：CTRL + 鼠标左键单击列表中的文件）"
+        @click="$emit('unselectFile', {idx: fileIdx, file})"
+      >
+        <span>取消选择</span>
+        <span style="padding: 0 5px;">
+          <svg-icon icon-class="unselect-file" />
         </span>
       </div>
     </div>
@@ -28,33 +40,23 @@
             请选择一个文件
           </div>
           <div class="file-dirinfo-box">
-            <div
-              class="file-detail-item"
-            >
+            <div class="file-detail-item">
               <div>当前目录:</div>
               <div>{{ dir }}</div>
             </div>
-            <div
-              class="file-detail-item"
-            >
+            <div class="file-detail-item">
               <div>项目总数:</div>
               <div>{{ fileList.length || '计算中...' }}</div>
             </div>
-            <div
-              class="file-detail-item"
-            >
+            <div class="file-detail-item">
               <div>目录数:</div>
               <div>{{ dirCount || '计算中...' }}</div>
             </div>
-            <div
-              class="file-detail-item"
-            >
+            <div class="file-detail-item">
               <div>文件数:</div>
               <div>{{ fileCount || '计算中...' }}</div>
             </div>
-            <div
-              class="file-detail-item"
-            >
+            <div class="file-detail-item">
               <div>估计目录大小:</div>
               <div>{{ $bus.sizeFormat(sizeCalc) || '计算中...' }}</div>
             </div>
@@ -121,9 +123,7 @@
               <div>{{ file.dir }}</div>
             </div>
 
-            <div
-              class="file-detail-item"
-            >
+            <div class="file-detail-item">
               <div>完整路径:</div>
               <div>{{ file.path }}</div>
             </div>
@@ -164,10 +164,9 @@ import jsonViewer from 'components/jsonViewer.vue'
 export default {
   components: {
     jsonViewer
-
   },
   props: {
-    file: {
+    selectedFile: {
       type: Object,
       default: () => {}
     },
@@ -187,6 +186,8 @@ export default {
   data () {
     return {
       utils,
+      file: undefined,
+      fileIdx: undefined,
       showJsonViews: false,
       scrollBarOptions: this.$bus.mixinScrollBarOptions({
         vuescroll: {
@@ -214,6 +215,12 @@ export default {
     },
     sizeCalc () {
       return this.fileList.reduce((acc, file) => acc + file.size, 0)
+    }
+  },
+  watch: {
+    selectedFile (selection) {
+      this.file = selection && selection.file
+      this.fileIdx = selection && selection.idx
     }
   }
 }
@@ -280,14 +287,14 @@ export default {
   :first-child {
     white-space: nowrap;
     border-radius: 4px;
-    background-color: #F3F3F3;
+    background-color: #f3f3f3;
     color: #000000;
     display: flex;
     align-self: baseline;
     padding: 4px 8px;
     margin-top: 8px;
     margin-right: 6px;
-    letter-spacing: .2px;
+    letter-spacing: 0.2px;
   }
   :last-child {
     white-space: pre-wrap;
@@ -309,25 +316,26 @@ export default {
   border-bottom: 1px dashed #d5d8e3;
   height: 55px;
   align-items: center;
+  justify-content: space-between;
 }
 
 .control-button {
   white-space: nowrap;
-  background-color: #F1F2F6;
+  background-color: #f1f2f6;
   padding: 5px 8px;
   border-radius: 4px;
-  transition: .2s ease;
+  transition: 0.2s ease;
   margin-right: 10px;
   font-size: 12px;
   cursor: pointer;
 }
 
 .control-button:hover {
-  filter: brightness(.9);
+  filter: brightness(0.9);
 }
 
 .control-button:active {
-  filter: brightness(.8);
+  filter: brightness(0.8);
 }
 
 .file-non-select-file {

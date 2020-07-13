@@ -39,11 +39,14 @@
         </div>
         <div
           class="folder-button"
-          title="刷新"
+          title="刷新（F5）"
           @click="handleRefreshFolder"
         >
           <span style="padding: 0 5px;">
-            <svg-icon icon-class="refresh" />
+            <svg-icon
+              :class="listingDir ? 'rorate-animate' : ''"
+              icon-class="refresh"
+            />
           </span>
         </div>
         <dir-path-bar
@@ -122,10 +125,11 @@
       />
     </div>
     <file-info
-      :file="selectedFile && selectedFile.file"
+      :selected-file="selectedFile"
       :file-list="fileList"
       :selected-files="selectedFiles"
       :dir="currentDir"
+      @unselectFile="(selection)=>handleSelectFile(selection.file, selection.idx, 'unselect')"
     />
   </div>
 </template>
@@ -183,18 +187,22 @@ export default {
       // 目录变更历史记录处理，用于前进及后退
       const historysHandler = () => {
         if (beforeDir) {
-          if (!this.historys[beforeDir]) { this.historys[beforeDir] = { to: currentDir } } else if (this.historys[beforeDir].from !== currentDir) {
+          if (!this.historys[beforeDir]) {
+            this.historys[beforeDir] = { to: currentDir }
+          } else if (this.historys[beforeDir].from !== currentDir) {
             this.historys[beforeDir].to = currentDir
           }
 
-          if (!this.historys[currentDir]) { this.historys[currentDir] = { from: beforeDir } } else if (this.historys[currentDir].to !== beforeDir) {
+          if (!this.historys[currentDir]) {
+            this.historys[currentDir] = { from: beforeDir }
+          } else if (this.historys[currentDir].to !== beforeDir) {
             this.historys[currentDir].from = beforeDir
           }
         }
         log(this.historys, 'dirChangeHistorys')
       }
       historysHandler()
-      this.handleRefreshFolder(currentDir)
+      this.handleRefreshFolder()
     },
 
     // 文件列表变更
@@ -268,7 +276,9 @@ export default {
     visibleAeraResize () {
       const resizedVisibleCount =
         Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
-      if (this.visibleCount < resizedVisibleCount) { this.visibleCount = resizedVisibleCount }
+      if (this.visibleCount < resizedVisibleCount) {
+        this.visibleCount = resizedVisibleCount
+      }
     },
 
     // 滚动时懒加载
@@ -292,12 +302,11 @@ export default {
     },
 
     // 刷新当前目录下的文件
-    handleRefreshFolder (dir) {
+    handleRefreshFolder () {
       if (this.listingDir) return
       // 非阻塞列出目录下的文件
       setImmediate(async () => {
-        this.fileList = await this.listdir(this.currentDir)
-        this.$emit('folderChanged', this.currentDir)
+        this.listdir(this.currentDir)
       })
     },
 
@@ -332,7 +341,9 @@ export default {
         ],
         message: '请选择您要打开的目录'
       })
-      if (!selection.canceled && selection.filePaths[0]) { this.currentDir = selection.filePaths[0] }
+      if (!selection.canceled && selection.filePaths[0]) {
+        this.currentDir = selection.filePaths[0]
+      }
     },
 
     // 清空所有当前文件选择
@@ -448,24 +459,28 @@ export default {
     },
 
     // 非阻塞列出目录下所有文件及信息
-    async listdir (dirPath) {
+    listdir (dirPath) {
       this.listingDir = true
       try {
         log(`listing directory [${dirPath}]...`)
         const start = Date.now()
 
         // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
-        let { fileList } = await this.chokidarHandler('listDir', { dirPath })
-        // 由于上述过程完成的结果是通过ipc通信发送的，所以对象的方法将会丢失，因此在这里重建我们File类的方法
-        fileList = fileList.map(file => new File(file))
+        this.chokidarHandler('listDir', { dirPath }).then(result => {
+          // 由于上述过程完成的结果是通过ipc通信发送的，所以对象的方法将会丢失，因此在这里重建我们File类的方法
+          const fileList = result.fileList.map(file => new File(file))
 
-        log(
-          `directory listing completed. file total: ${
-            fileList.length
-          }, time spent: ${Date.now() - start}ms`
-        )
-        this.listingDir = false
-        return fileList
+          // 完成
+          this.fileList = fileList
+          this.$emit('folderChanged', { dir: this.currentDir, fileList })
+          this.listingDir = false
+
+          log(
+            `directory listing completed. file total: ${
+              fileList.length
+            }, time spent: ${Date.now() - start}ms`
+          )
+        })
       } catch (err) {
         log(`failed when listing directory [${dirPath}]`)
         this.listingDir = false
@@ -474,7 +489,7 @@ export default {
     },
 
     // 选择文件处理
-    handleSelectFile (file, idx) {
+    handleSelectFile (file, idx, handle) {
       // 选中
       const select = multiple => {
         this.selectedFile = { idx, file }
@@ -510,6 +525,10 @@ export default {
       // 获取节点及选中状态
       const target = this.$refs[`fileitem${idx}`][0]
       const selected = this.selectedFiles.find(item => item.idx === idx)
+      if (handle === 'unselect') {
+        unselect()
+        return
+      }
       // 按住ctrl进行多选处理
       if (this.onCtrl) {
         if (selected) unselect()
@@ -529,13 +548,17 @@ export default {
     watchKeyEvent () {
       const setKeyStatus = (keyCode, status) => {
         switch (keyCode) {
-          case 16:
+          case 16: // shift
             if (this.onShfit === status) return
             this.onShfit = status
             break
-          case 17:
+          case 17: // ctrl
             if (this.onCtrl === status) return
             this.onCtrl = status
+            break
+          case 116: // f5
+            if (status !== true) return
+            this.handleRefreshFolder()
             break
         }
       }
@@ -678,4 +701,16 @@ export default {
   background-color: #d8dae5 !important;
 }
 
+.rorate-animate {
+  animation: circle .6s infinite linear;
+}
+
+@keyframes circle {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>
