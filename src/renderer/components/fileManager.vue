@@ -75,7 +75,7 @@
               v-for="(file, idx) in visibleFileList"
               :key="idx"
               :ref="`fileitem${idx}`"
-              class="file-item"
+              :class="fileItemClass(file)"
               :title="file.path"
               @click="handleFileClick(file, idx)"
               @dblclick="handleDoubleClick(file, idx)"
@@ -129,6 +129,7 @@
       :file-list="fileList"
       :selected-files="selectedFiles"
       :dir="currentDir"
+      @filterChange="handleFilterChange"
       @unselectFile="(selection)=>handleSelectFile(selection.file, selection.idx, 'unselect')"
     />
   </div>
@@ -169,9 +170,11 @@ export default {
       selectedFile: {},
       selectedFiles: [],
       fileList: [],
-      visibleCount: 0,
+      visibleCount: 10,
       visibleFileList: [],
       listingDir: false,
+      filters: {},
+      filted: 0,
       currentDir: this.targetDir,
       scrollBarOptions: this.$bus.mixinScrollBarOptions({
         vuescroll: {
@@ -191,6 +194,13 @@ export default {
       historys: {},
       lastScrollTop: 0,
       scrollLength: 0
+    }
+  },
+  computed: {
+    fileItemClass () {
+      return (file) => {
+        return 'file-item' + (file.ext && this.filters[file.ext].status !== true ? ' hidden' : '')
+      }
     }
   },
   watch: {
@@ -223,8 +233,7 @@ export default {
     fileList (fileList) {
       // 将文件内容区的最小高度设置为数据完全加载后的高度
       // 由于实际上列表数据是懒加载的，这样做可以使得滚动条的比例完整，让人一眼看不出来是懒加载
-      this.$refs.fileListContent.style.minHeight = `${this.fileList.length *
-        65}px`
+      this.$refs.fileListContent.style.minHeight = `${this.fileList.length * 65}px`
       this.visibleFileList = this.fileList.slice(0, this.visibleCount)
     },
 
@@ -241,20 +250,43 @@ export default {
           this.onShift = false
         }
       }
+    },
+
+    filters: {
+      deep: true,
+      handler: function (filters) {
+        if (!this.visibleCount) return
+        // 计算过滤掉的文件数量
+        const filtedCount = Object.values(filters).reduce((acc, filter) => {
+          if (filter.status === false) acc += filter.count
+          return acc
+        }, 0)
+        // 补偿加载文件
+        if (filtedCount > this.filted) {
+          this.visibleCount += filtedCount - this.filted
+          this.filted = filtedCount
+        }
+        // 重新计算列表滚动高度
+        this.$refs.fileListContent.style.minHeight = `${(this.fileList.length - filtedCount) * 65}px`
+      }
     }
+
   },
   mounted () {
     this.watchKeyEvent()
     this.$nextTick(() => {
       // 初始加载2屏的数据
-      this.visibleCount =
-        Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
+      this.visibleCount = Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
     })
   },
   created () {
     this.initialCurrentDir()
   },
   methods: {
+    // 过滤器变更事件
+    handleFilterChange (filters) {
+      this.filters = filters
+    },
     // 地址栏目录变更处理
     handleChangeDir (dir) {
       this.currentDir = dir
@@ -726,5 +758,9 @@ export default {
   to {
     transform: rotate(360deg);
   }
+}
+
+.hidden {
+  display: none;
 }
 </style>

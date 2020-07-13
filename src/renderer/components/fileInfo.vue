@@ -50,25 +50,34 @@
             </div>
             <div class="file-detail-item">
               <div>目录数:</div>
-              <div>{{ dirCount }}</div>
+              <div>{{ calcing ? '计算中...' : dirCount }}</div>
             </div>
             <div class="file-detail-item">
               <div>文件数:</div>
-              <div>{{ fileCount }}</div>
+              <div>{{ calcing ? '计算中...' : fileCount }}</div>
             </div>
             <div class="file-detail-item">
               <div>估计目录大小:</div>
-              <div>{{ $bus.sizeFormat(sizeTotal) }}</div>
+              <div>{{ calcing ? '计算中...' : $bus.sizeFormat(sizeTotal) }}</div>
             </div>
           </div>
           <div
             v-if="fileCount"
             class="file-dirinfo-box"
           >
-            <div class="file-detail-name">
+            <div
+              class="file-detail-name"
+              style="user-select: none;"
+              title="单击下列项目选择过滤指定的文件类型，右键单击此处可查看菜单"
+              @contextmenu.prevent="fileFiltersContextmenu"
+            >
               文件类型过滤器
             </div>
-            <div class="file-filter-box">
+            <div
+              v-if="!calcing"
+              class="file-filter-box"
+              @contextmenu.prevent="fileFiltersContextmenu"
+            >
               <div
                 v-for="(fileFilter, ext) in fileTypeFilters"
                 :key="ext + 'filter'"
@@ -78,6 +87,14 @@
               >
                 <span class="file-filter-ext">{{ ext }}</span>
                 (<span class="file-filter-count">{{ fileFilter.count }}</span>)
+              </div>
+            </div>
+            <div
+              v-if="calcing"
+              class="file-filter-box"
+            >
+              <div class="file-type-filter-button">
+                文件类型计算中...
               </div>
             </div>
           </div>
@@ -116,7 +133,6 @@
                 {{ file.sizeFormatted }}
               </div>
               <div v-else>
-                fileList
                 未计算
               </div>
             </div>
@@ -209,10 +225,10 @@ export default {
       file: undefined,
       fileIdx: undefined,
       showJsonViews: false,
-      filters: {},
       dirCount: 0,
       fileCount: 0,
       sizeTotal: 0,
+      calcing: false,
       fileTypeFilters: {},
       scrollBarOptions: this.$bus.mixinScrollBarOptions({
         vuescroll: {
@@ -246,11 +262,12 @@ export default {
       this.file = selection && selection.file
       this.fileIdx = selection && selection.idx
     },
-    async fileList (fileList) {
+    fileList (fileList) {
       let dirCount = 0
       let fileCount = 0
       let sizeTotal = 0
       const filters = {}
+      this.calcing = true
       for (const file of fileList) {
         if (file.isDir) dirCount++
         if (file.isFile) fileCount++
@@ -264,6 +281,41 @@ export default {
       this.fileCount = fileCount
       this.sizeTotal = sizeTotal
       this.fileTypeFilters = filters
+      this.calcing = false
+    },
+    fileTypeFilters (filters) {
+      this.$emit('filterChange', filters)
+    }
+  },
+  methods: {
+    fileFiltersContextmenu (event) {
+      // 菜单项处理函数
+      const handleChange = (handle) => {
+        const filters = this.fileTypeFilters
+        for (const key in filters) {
+          const filter = filters[key]
+          if (typeof (handle) === 'boolean') filter.status = handle
+          else filter.status = !filter.status
+        }
+        this.fileTypeFilters = filters
+      }
+
+      // 所有过滤器都是某个状态吗？
+      const allFiltersStatus = (status) => {
+        return !(Object.values(this.fileTypeFilters).filter(filter => filter.status === status).length > 0)
+      }
+
+      // 设置右键菜单
+      this.$contextmenu({
+        items: [
+          { label: '过滤全部', disabled: allFiltersStatus(true), onClick: () => { handleChange(false) } },
+          { label: '取消过滤', disabled: allFiltersStatus(false), onClick: () => { handleChange(true) } },
+          { label: '反选', onClick: () => { handleChange() } }
+        ],
+        event,
+        zIndex: 3,
+        minWidth: 100
+      })
     }
   }
 }
