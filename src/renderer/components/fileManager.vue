@@ -96,9 +96,16 @@
                     {{ file.type }}
                   </div>
                   <div
+                    v-if="file.initialed"
                     class="file-info"
                   >
                     {{ file.timeTypeFormatted('ctime') }} {{ file.timeFormatted('ctime') }}
+                  </div>
+                  <div
+                    v-if="!file.initialed"
+                    class="file-info"
+                  >
+                    无访问权限
                   </div>
                   <div
                     v-if="file.isFile"
@@ -199,7 +206,7 @@ export default {
   computed: {
     fileItemClass () {
       return (file) => {
-        return 'file-item' + (file.ext && this.filters[file.ext] && this.filters[file.ext].status !== true ? ' hidden' : '')
+        return 'file-item' + (this.filters[file.ext || ''] && this.filters[file.ext || ''].status === false ? ' hidden' : '')
       }
     }
   },

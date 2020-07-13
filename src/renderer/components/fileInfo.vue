@@ -2,7 +2,7 @@
   <div class="file-detail-box">
     <div class="file-info-control-bar">
       <div
-        v-if="file && file.isFile"
+        v-if="file"
         class="control-button"
         :title="`将文件信息切换到${!showJsonViews ? '专业' : '一般'}视图显示`"
         @click="showJsonViews = !showJsonViews"
@@ -71,7 +71,7 @@
               title="单击下列项目选择过滤指定的文件类型，右键单击此处可查看菜单"
               @contextmenu.prevent="fileFiltersContextmenu"
             >
-              文件类型过滤器
+              类型过滤器
             </div>
             <div
               v-if="!calcing"
@@ -82,10 +82,10 @@
                 v-for="(fileFilter, ext) in fileTypeFilters"
                 :key="ext + 'filter'"
                 :class="fileTypeFilterButtonClass(fileFilter.status)"
-                :title="`文件类型：${ext}; 文件数量：${fileFilter.count}; ${fileFilter.status === true ? '已显示' : '已过滤'}`"
+                :title="fileTypeFilterTitleClass(fileFilter, ext)"
                 @click="fileFilter.status = !fileFilter.status"
               >
-                <span class="file-filter-ext">{{ ext }}</span>
+                <span class="file-filter-ext">{{ ext === ':directory:' ? '目录' : ext || '无扩展名' }}</span>
                 (<span class="file-filter-count">{{ fileFilter.count }}</span>)
               </div>
             </div>
@@ -138,7 +138,7 @@
             </div>
 
             <div
-              v-if="file.ext"
+              v-if="!file.isDir && file.ext"
               class="file-detail-item"
             >
               <div>文件后缀:</div>
@@ -255,6 +255,13 @@ export default {
           (status === true ? ' file-type-filter-enabled' : '')
         )
       }
+    },
+    fileTypeFilterTitleClass () {
+      return (fileFilter, ext) => {
+        const type = (ext === ':directory:' ? '目录' : ext || '无扩展名文件')
+        const status = (fileFilter.status === true ? '已显示' : '已过滤')
+        return `项目类型：${type}; 项目数量：${fileFilter.count}; ${status}`
+      }
     }
   },
   watch: {
@@ -262,6 +269,7 @@ export default {
       this.file = selection && selection.file
       this.fileIdx = selection && selection.idx
     },
+    // 计算目录及文件信息
     fileList (fileList) {
       let dirCount = 0
       let fileCount = 0
@@ -271,15 +279,16 @@ export default {
       for (const file of fileList) {
         if (file.isDir) dirCount++
         if (file.isFile) fileCount++
-        sizeTotal += file.size
+        sizeTotal += file.size || 0
 
-        if (!file.ext) continue
+        if (!file.ext && file.isDir) continue
         if (file.ext in filters) filters[file.ext].count++
         else filters[file.ext] = { count: 1, status: true }
       }
       this.dirCount = dirCount
       this.fileCount = fileCount
       this.sizeTotal = sizeTotal
+      if (dirCount > 0) filters[':directory:'] = { status: true, count: dirCount }
       this.fileTypeFilters = filters
       this.calcing = false
     },

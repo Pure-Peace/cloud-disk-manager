@@ -14,7 +14,7 @@ export default class File {
       this.path = path
       this.name = PATH.basename(path)
       this.dir = PATH.dirname(path)
-      this.ext = PATH.extname(path).replace('.', '')
+      this.ext = ''
       this.mime = mime.getType(this.ext)
 
       try {
@@ -22,6 +22,8 @@ export default class File {
         Object.assign(this, stats)
 
         this.isDir = stats.isDirectory()
+        if (!this.isDir) this.ext = PATH.extname(path).replace('.', '')
+        else this.ext = ':directory:'
         this.isFile = stats.isFile()
         this.isFIFO = stats.isFIFO()
         this.isSocket = stats.isSocket()
@@ -50,7 +52,7 @@ export default class File {
       const tryName = fileType
       return iconList.includes(tryName) ? tryName : ''
     }
-    const name = this.isFile ? 'file' : 'folder'
+    const name = this.initialed ? (this.isFile ? 'file' : 'folder') : 'question'
     if (this.isFile && this.ext) return tryIcon(this.ext) || name
     return name
   }
@@ -96,6 +98,11 @@ export default class File {
 
   getInfo (json = true) {
     const { initialed, ...info } = this
+    if (this.isDir) {
+      for (const deleteAttr of ['ext', 'mime']) {
+        delete (info[deleteAttr])
+      }
+    }
     return json ? JSON.stringify(info) : JSON.parse(JSON.stringify(info))
   }
 }
