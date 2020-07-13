@@ -4,6 +4,11 @@
       <div v-show="!file">
         请选择文件
       </div>
+      <json-viewer
+        v-if="file"
+        style="user-select: text;"
+        :data="file.getInfo(false)"
+      />
       <div
         v-if="file"
         class="file-info-head"
@@ -84,8 +89,13 @@
 
 <script>
 import utils from 'components/utils.js'
+import jsonViewer from 'components/jsonViewer.vue'
 
 export default {
+  components: {
+    jsonViewer
+
+  },
   props: {
     file: {
       type: Object,

@@ -95,6 +95,6 @@ export default class File {
 
   getInfo (json = true) {
     const { initialed, ...info } = this
-    return json ? JSON.stringify(info) : info
+    return json ? JSON.stringify(info) : JSON.parse(JSON.stringify(info))
   }
 }
