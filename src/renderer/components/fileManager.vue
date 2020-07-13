@@ -173,7 +173,21 @@ export default {
       visibleFileList: [],
       listingDir: false,
       currentDir: this.targetDir,
-      scrollBarOptions: this.$bus.mixinScrollBarOptions(),
+      scrollBarOptions: this.$bus.mixinScrollBarOptions({
+        vuescroll: {
+          detectResize: true
+        },
+        bar: {
+          background: '#5C617C',
+          specifyBorderRadius: '4px',
+          size: '8px',
+          showDelay: 500
+        },
+        rail: {
+          size: '12px',
+          specifyBorderRadius: '4px'
+        }
+      }),
       historys: {},
       lastScrollTop: 0,
       scrollLength: 0
@@ -647,7 +661,7 @@ export default {
 }
 
 .file-item:hover {
-  background-color: #e1f0ff;
+  background-color: #F2F4FF;
 }
 
 .file-self-box {
@@ -675,7 +689,7 @@ export default {
 
 .file-selected {
   color: #000000 !important;
-  background-color: #e4e6f1 !important;
+  background-color: #EDF0FF !important;
 }
 
 .file-info-box {

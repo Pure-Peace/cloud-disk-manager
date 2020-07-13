@@ -88,6 +88,7 @@ export default {
 }
 
 .file-dirname:hover {
-  border-bottom: 1px solid;
+  filter: brightness(.6);
+  border-bottom: 1.2px dashed;
 }
 </style>

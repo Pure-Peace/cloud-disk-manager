@@ -46,19 +46,19 @@
             </div>
             <div class="file-detail-item">
               <div>项目总数:</div>
-              <div>{{ fileList.length || '计算中...' }}</div>
+              <div>{{ fileList.length }}</div>
             </div>
             <div class="file-detail-item">
               <div>目录数:</div>
-              <div>{{ dirCount || '计算中...' }}</div>
+              <div>{{ dirCount }}</div>
             </div>
             <div class="file-detail-item">
               <div>文件数:</div>
-              <div>{{ fileCount || '计算中...' }}</div>
+              <div>{{ fileCount }}</div>
             </div>
             <div class="file-detail-item">
               <div>估计目录大小:</div>
-              <div>{{ $bus.sizeFormat(sizeCalc) || '计算中...' }}</div>
+              <div>{{ $bus.sizeFormat(sizeCalc) }}</div>
             </div>
           </div>
         </div>
@@ -316,7 +316,7 @@ export default {
   border-bottom: 1px dashed #d5d8e3;
   height: 55px;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
 }
 
 .control-button {
@@ -328,6 +328,7 @@ export default {
   margin-right: 10px;
   font-size: 12px;
   cursor: pointer;
+  color: @primary;
 }
 
 .control-button:hover {
