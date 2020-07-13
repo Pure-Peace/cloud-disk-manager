@@ -13,8 +13,19 @@
       </div>
     </div>
     <vue-scroll :ops="scrollBarOptions">
-      <div v-show="!file">
-        请选择文件
+      <div
+        v-show="!file"
+        class="file-non-select-file"
+      >
+        <div class="file-icon-box">
+          <svg-icon
+            class="file-icon"
+            icon-class="file-box"
+          />
+        </div>
+        <div class="file-detail-name">
+          请选择一个文件
+        </div>
       </div>
       <json-viewer
         v-if="file && showJsonViews"
@@ -180,7 +191,7 @@ export default {
 }
 
 .file-info-head {
-  padding: 10px;
+  padding: 15px;
 }
 
 .file-detail-item {
@@ -244,5 +255,12 @@ export default {
 
 .control-button:active {
   filter: brightness(.8);
+}
+
+.file-non-select-file {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 </style>

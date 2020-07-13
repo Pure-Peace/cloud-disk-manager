@@ -17,7 +17,7 @@
       </div>
     </div>
     <vue-json-pretty
-      style="user-select: text !important; margin-left: 20px;"
+      style="user-select: text !important; margin: 0 10px; overflow: hidden;"
       :data="data"
       :show-select-controller="false"
       :highlight-mouseover-node="true"
