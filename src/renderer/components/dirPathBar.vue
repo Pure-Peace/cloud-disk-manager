@@ -2,6 +2,7 @@
   <div
     class="file-currentdir"
     :title="'当前目录：' + dir"
+    @contextmenu.prevent="dirPathBarShowContextMenu"
   >
     <span
       v-for="(dirName, idx) in dirList"
@@ -60,6 +61,49 @@ export default {
     handleClickDirname (idx) {
       const targetDir = this.getTargetDir(idx)
       this.$emit('changeDir', targetDir)
+    },
+
+    // 地址栏右键单击上下文菜单
+    dirPathBarShowContextMenu (event) {
+      // 设置菜单
+      this.$contextmenu({
+        items: [
+          {
+            label: this.dir,
+            divided: true,
+            onClick: () => {
+              this.$bus.clipboard.writeText(this.dir)
+            }
+          },
+          {
+            label: '复制完整路径',
+            onClick: () => {
+              this.$bus.clipboard.writeText(this.dir)
+            }
+          }
+        ],
+        event,
+        zIndex: 3,
+        minWidth: 230
+      })
+    },
+
+    // 地址栏单项目右键单击上下文菜单
+    dirItemShowContextMenu1 (event) {
+      // 设置菜单
+      this.$contextmenu({
+        items: [
+          {
+            label: 'zzzz',
+            onClick: () => {
+              this.$bus.clipboard.writeText('this.currentDir')
+            }
+          }
+        ],
+        event,
+        zIndex: 3,
+        minWidth: 230
+      })
     }
   }
 

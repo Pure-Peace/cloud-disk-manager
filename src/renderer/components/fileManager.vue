@@ -122,7 +122,10 @@
                 </div>
               </div>
             </div>
-            <empty :show="listingDir === 2 && visibleFileList.length === 0" />
+            <empty
+              :show="listingDir === 2 && visibleFileList.length === 0"
+              @contextmenu.native="emptyShowContextMenu"
+            />
           </div>
         </vue-scroll>
       </div>
@@ -430,10 +433,48 @@ export default {
       })
     },
 
+    // 空文件列表右键单击上下文菜单
+    emptyShowContextMenu (event) {
+      // 设置菜单
+      this.$contextmenu({
+        items: [
+          {
+            label: '刷新（F5）',
+            onClick: () => {
+              this.handleRefreshFolder()
+            }
+          }
+        ],
+        event,
+        zIndex: 3,
+        minWidth: 230
+      })
+    },
+
     // 文件项目右键单击上下文菜单
     fileShowContextmenu (event, file, idx) {
+      const selected = this.handleSelectFile(file, idx, 'isSelected')
       // 共用菜单项
       const publicMenuItems = [
+        {
+          label: file.path,
+          disabled: true
+        },
+        {
+          label: '添加到选择',
+          disabled: selected,
+          onClick: () => {
+            this.handleSelectFile(file, idx, 'addselect')
+          }
+        },
+        {
+          label: '取消选择',
+          disabled: !selected,
+          divided: true,
+          onClick: () => {
+            this.handleSelectFile(file, idx, 'unselect')
+          }
+        },
         {
           label: '复制完整路径',
           onClick: () => {
@@ -448,6 +489,7 @@ export default {
         },
         {
           label: `复制${file.isDir ? '目录' : '文件'}名`,
+          divided: true,
           onClick: () => {
             this.$bus.clipboard.writeText(file.name)
           }
@@ -473,35 +515,6 @@ export default {
 
       // 文件类型专属菜单项
       const fileMenuItems = []
-      /*
-      [        { label: '前进(F)', disabled: true },
-        { label: '重新加载(R)', divided: true, icon: 'el-icon-refresh' },
-        { label: '另存为(A)...' },
-        { label: '打印(P)...', icon: 'el-icon-printer' },
-        { label: '投射(C)...', divided: true },
-        {
-          label: '使用网页翻译(T)',
-          divided: true,
-          minWidth: 0,
-          children: [{ label: '翻译成简体中文' }, { label: '翻译成繁体中文' }]
-        },
-        {
-          label: '截取网页(R)',
-          minWidth: 0,
-          children: [
-            {
-              label: '截取可视化区域',
-              onClick: () => {
-                this.message = '截取可视化区域'
-                console.log('截取可视化区域')
-              }
-            },
-            { label: '截取全屏' }
-          ]
-        },
-        { label: '查看网页源代码(V)', icon: 'dir' },
-        { label: '检查(N)' }]
-        */
 
       // 设置菜单
       this.$contextmenu({
@@ -563,6 +576,7 @@ export default {
       // 取消选择
       const unselect = () => {
         const sidx = this.selectedFiles.findIndex(item => item.idx === idx)
+        if (sidx === -1) return
         this.selectedFiles.splice(sidx, 1)
         const selection = this.selectedFiles[sidx - 1]
         this.selectedFile = selection && { idx, file: selection.file }
@@ -583,10 +597,21 @@ export default {
       // 获取节点及选中状态
       const target = this.$refs[`fileitem${idx}`][0]
       const selected = this.selectedFiles.find(item => item.idx === idx)
-      if (handle === 'unselect') {
-        unselect()
-        return
+
+      // 高优先的命令处理
+      switch (handle) {
+        case 'unselect':
+          unselect()
+          return
+
+        case 'addselect':
+          select(true)
+          return
+
+        case 'isSelected':
+          return selected
       }
+
       // 按住ctrl进行多选处理
       if (this.onCtrl) {
         if (selected) unselect()
