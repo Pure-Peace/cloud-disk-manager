@@ -51,7 +51,7 @@
         </div>
         <dir-path-bar
           :dir="currentDir"
-          @changeDir="handleChangeDir"
+          @changeDir="(dir)=> {currentDir = dir}"
         />
       </div>
       <div class="file-list-box">
@@ -71,57 +71,16 @@
             ref="fileListContent"
             class="file-list-content"
           >
-            <div
+            <file-list-item
               v-for="(file, idx) in visibleFileList"
               :key="idx"
-              :ref="`fileitem${idx}`"
-              :class="fileItemClass(file)"
-              :title="file.path"
-              @click="handleFileClick(file, idx)"
-              @dblclick="handleDoubleClick(file, idx)"
-              @contextmenu.prevent="fileShowContextmenu($event, file, idx)"
-            >
-              <div class="file-icon-box">
-                <svg-icon
-                  class="file-icon"
-                  :icon-class="file.iconClass"
-                />
-              </div>
-              <div class="file-self-box">
-                <div class="file-name">
-                  {{ file.name }}
-                </div>
-                <div class="file-info-box">
-                  <div class="file-info">
-                    {{ file.type }}
-                  </div>
-                  <div
-                    v-if="file.initialed"
-                    class="file-info"
-                  >
-                    {{ file.timeTypeFormatted('ctime') }} {{ file.timeFormatted('ctime') }}
-                  </div>
-                  <div
-                    v-if="!file.initialed"
-                    class="file-info"
-                  >
-                    无访问权限
-                  </div>
-                  <div
-                    v-if="file.isFile"
-                    class="file-info"
-                  >
-                    {{ file.sizeFormatted }}
-                  </div>
-                  <div
-                    v-else
-                    class="file-info"
-                  >
-                    未计算
-                  </div>
-                </div>
-              </div>
-            </div>
+              :file="file"
+              :show="!(filters[file.ext] && filters[file.ext].status === false)"
+              :selected-count="selectedFiles.length"
+              @handleSelect="(file, handle)=>handleSelectFile(file, handle)"
+              @fileDoubleClick="handleFileDoubleClick"
+              @fileClick="handleFileClick"
+            />
             <empty
               :show="listingDir === 2 && visibleFileList.length === 0"
               @contextmenu.native="emptyShowContextMenu"
@@ -136,12 +95,11 @@
       />
     </div>
     <file-info
-      :selected-file="selectedFile"
+      :file="selectedFile"
       :file-list="fileList"
-      :selected-files="selectedFiles"
       :dir="currentDir"
-      @filterChange="handleFilterChange"
-      @unselectFile="(selection)=>handleSelectFile(selection.file, selection.idx, 'unselect')"
+      @filterChange="(changedFilters)=>{filters = changedFilters}"
+      @unselectFile="(file)=>handleSelectFile(file, 'unselect')"
     />
   </div>
 </template>
@@ -154,6 +112,7 @@ import vueLoading from 'vue-element-loading'
 import File from 'components/file.js'
 import dirPathBar from 'components/dirPathBar.vue'
 import empty from 'components/empty.vue'
+import fileListItem from 'components/fileListItem.vue'
 
 const log = console.log
 
@@ -163,7 +122,8 @@ export default {
     fileInfo,
     vueLoading,
     dirPathBar,
-    empty
+    empty,
+    fileListItem
   },
   props: {
     targetDir: {
@@ -180,7 +140,7 @@ export default {
       utils,
       onCtrl: false,
       onShift: false,
-      selectedFile: {},
+      selectedFile: null,
       selectedFiles: [],
       fileList: [],
       visibleCount: 10,
@@ -209,14 +169,7 @@ export default {
       scrollLength: 0
     }
   },
-  computed: {
-    // 列表项目样式，含过滤器
-    fileItemClass () {
-      return (file) => {
-        return 'file-item' + (this.filters[file.ext || ''] && this.filters[file.ext || ''].status === false ? ' hidden' : '')
-      }
-    }
-  },
+
   watch: {
     // 文件目录变更
     currentDir (currentDir, beforeDir) {
@@ -247,7 +200,8 @@ export default {
     fileList (fileList) {
       // 将文件内容区的最小高度设置为数据完全加载后的高度
       // 由于实际上列表数据是懒加载的，这样做可以使得滚动条的比例完整，让人一眼看不出来是懒加载
-      this.$refs.fileListContent.style.minHeight = `${this.fileList.length * 65}px`
+      this.$refs.fileListContent.style.minHeight = `${this.fileList.length *
+        65}px`
       this.visibleFileList = this.fileList.slice(0, this.visibleCount)
     },
 
@@ -281,30 +235,28 @@ export default {
           this.filted = filtedCount
         }
         // 重新计算列表滚动高度
-        this.$refs.fileListContent.style.minHeight = `${(this.fileList.length - filtedCount) * 65}px`
+        this.$refs.fileListContent.style.minHeight = `${(this.fileList.length -
+          filtedCount) *
+          65}px`
       }
     }
-
   },
   mounted () {
     this.watchKeyEvent()
     this.$nextTick(() => {
       // 初始加载2屏的数据
-      this.visibleCount = Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
+      this.visibleCount =
+        Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
     })
   },
   created () {
     this.initialCurrentDir()
   },
   methods: {
-    // 过滤器变更事件
-    handleFilterChange (filters) {
-      this.filters = filters
+    test (e, g, m) {
+      log(e, g, m)
     },
-    // 地址栏目录变更处理
-    handleChangeDir (dir) {
-      this.currentDir = dir
-    },
+
     // 子服务处理器，高cpu、高io的操作丢给子服务，有效防止渲染进程阻塞！
     chokidarHandler (channel, data, subServiceName = 'chokidarService') {
       return new Promise(resolve => {
@@ -381,14 +333,14 @@ export default {
     },
 
     // 文件双击事件
-    handleDoubleClick (file, idx) {
+    handleFileDoubleClick (file, idx) {
       if (file.isDir) this.currentDir = file.path
       log(idx, file, file.name, 'onDoubleClicked')
     },
 
     // 文件单击事件
-    handleFileClick (file, idx) {
-      this.handleSelectFile(file, idx)
+    handleFileClick (file) {
+      this.handleSelectFile(file)
     },
 
     // 选择目录，等效于同步方法
@@ -408,7 +360,7 @@ export default {
 
     // 清空所有当前文件选择
     clearSelection () {
-      this.selectedFile = {}
+      this.selectedFile = null
       this.selectedFiles = []
       this.fileList = []
       this.listingDir = 0
@@ -451,92 +403,6 @@ export default {
       })
     },
 
-    // 文件项目右键单击上下文菜单
-    fileShowContextmenu (event, file, idx) {
-      const selected = this.handleSelectFile(file, idx, 'isSelected')
-      // 共用菜单项
-      const publicMenuItems = [
-        {
-          label: file.path,
-          disabled: true
-        },
-        {
-          label: '添加到选择',
-          disabled: selected,
-          onClick: () => {
-            this.handleSelectFile(file, idx, 'addselect')
-          }
-        },
-        {
-          label: '从选择移除',
-          disabled: !selected,
-          divided: true,
-          onClick: () => {
-            this.handleSelectFile(file, idx, 'unselect')
-          }
-        },
-        {
-          label: '取消所有选择',
-          divided: true,
-          disabled: this.selectedFiles.length === 0,
-          onClick: () => {
-            this.handleSelectFile(file, idx, 'unselectAll')
-          }
-        },
-        {
-          label: '复制完整路径',
-          onClick: () => {
-            this.$bus.clipboard.writeText(file.path)
-          }
-        },
-        {
-          label: '复制所在路径',
-          onClick: () => {
-            this.$bus.clipboard.writeText(file.dir)
-          }
-        },
-        {
-          label: `复制${file.isDir ? '目录' : '文件'}名`,
-          divided: true,
-          onClick: () => {
-            this.$bus.clipboard.writeText(file.name)
-          }
-        },
-        {
-          label: '复制完整信息（JSON）',
-          onClick: () => {
-            this.$bus.clipboard.writeText(file.getInfo())
-          }
-        }
-      ]
-
-      // 目录类型专属菜单项
-      const dirMenuItems = [
-        {
-          label: '进入目录',
-          divided: true,
-          onClick: () => {
-            this.currentDir = file.path
-          }
-        }
-      ]
-
-      // 文件类型专属菜单项
-      const fileMenuItems = []
-
-      // 设置菜单
-      this.$contextmenu({
-        items: [
-          ...(file.isDir ? dirMenuItems : fileMenuItems),
-          ...publicMenuItems
-        ],
-        event,
-        zIndex: 3,
-        minWidth: 230,
-        el: this.$refs[`fileitem${idx}`][0]
-      })
-    },
-
     // 非阻塞列出目录下所有文件及信息
     listdir (dirPath) {
       this.listingDir = 1
@@ -568,44 +434,42 @@ export default {
     },
 
     // 选择文件处理
-    handleSelectFile (file, idx, handle) {
+    handleSelectFile (file, handle) {
       // 选中
       const select = multiple => {
-        this.selectedFile = { idx, file }
-        if (multiple) this.selectedFiles.push({ idx, file })
-        else this.selectedFiles = [{ idx, file }]
+        this.selectedFile = file
+        if (multiple) this.selectedFiles.push(file)
+        else this.selectedFiles = [file]
 
-        target.className += ' file-selected'
-        this.$emit('fileSelected', file, idx)
-
-        log(idx, file, file.name, 'selected')
+        file.selected = true
+        this.$emit('fileSelected', file)
+        log(file, file.name, 'selected')
       }
 
       // 取消选择
       const unselect = () => {
-        const sidx = this.selectedFiles.findIndex(item => item.idx === idx)
-        if (sidx === -1) return
-        this.selectedFiles.splice(sidx, 1)
-        const selection = this.selectedFiles[sidx - 1]
-        this.selectedFile = selection && { idx, file: selection.file }
-        target.className = target.className.replace(' file-selected', '')
-        this.$emit('fileUnselected', file, idx)
-        log(idx, file, file.name, 'unselected')
+        const currentFileIndex = this.selectedFiles.findIndex(
+          fileInSelected => fileInSelected === file
+        )
+        if (currentFileIndex === -1) return
+        file.selected = false
+        this.selectedFiles.splice(currentFileIndex, 1)
+        this.selectedFile = this.selectedFiles[currentFileIndex - 1]
+        this.$emit('fileUnselected', file)
+        log(file, file.name, 'unselected')
       }
 
       // 取消选择所有
       const unselectAll = () => {
-        this.selectedFiles.forEach(item => {
-          const target = this.$refs[`fileitem${item.idx}`][0]
-          target.className = target.className.replace(' file-selected', '')
+        this.selectedFiles.forEach(fileInSelected => {
+          fileInSelected.selected = false
         })
         this.selectedFiles = []
-        this.selectedFile = {}
+        this.selectedFile = null
       }
 
-      // 获取节点及选中状态
-      const target = this.$refs[`fileitem${idx}`][0]
-      const selected = this.selectedFiles.find(item => item.idx === idx)
+      // 获取选中状态
+      const selected = file.selected
 
       // 高优先的命令处理
       switch (handle) {
@@ -616,9 +480,6 @@ export default {
         case 'addselect':
           select(true)
           return
-
-        case 'isSelected':
-          return selected
 
         case 'unselectAll':
           unselectAll()
@@ -635,7 +496,7 @@ export default {
           unselectAll()
           select()
         } else {
-          this.selectedFile = selected
+          this.selectedFile = file
         }
       }
     },
@@ -731,75 +592,8 @@ export default {
   background-color: transparent;
 }
 
-.file-item {
-  overflow: hidden;
-  display: flex;
-  flex-direction: row;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  padding: 6px 10px;
-  align-items: center;
-  border-bottom: 1px dashed #f1f2f6;
-}
-
-.file-item:hover {
-  background-color: #F2F4FF;
-}
-
-.file-self-box {
-  padding: 0 10px;
-}
-
-.file-icon-box {
-  min-height: 2rem;
-  min-width: 2rem;
-  height: 2rem;
-  width: 2rem;
-}
-
-.file-icon {
-  height: 100% !important;
-  width: 100% !important;
-}
-
-.file-name {
-  font-size: 13px;
-  font-family: "Segoe WPC", "Segoe UI", "Microsoft YaHei", sans-serif;
-  line-height: 22px;
-  padding: 0 5px;
-}
-
-.file-selected {
-  color: #000000 !important;
-  background-color: #EDF0FF !important;
-}
-
-.file-info-box {
-  padding: 4px;
-  display: flex;
-
-  :not(:first-child) {
-    margin-left: 10px;
-  }
-}
-
-.file-info {
-  display: flex;
-  //color: @white;
-  //background-color: @primary;
-  font-size: 12px;
-  padding: 2px 0;
-  border-radius: 4px;
-}
-
-.contextmenu-active {
-  color: #000000 !important;
-  background-color: #d8dae5 !important;
-}
-
 .rorate-animate {
-  animation: circle .6s infinite linear;
+  animation: circle 0.6s infinite linear;
 }
 
 @keyframes circle {
@@ -809,9 +603,5 @@ export default {
   to {
     transform: rotate(360deg);
   }
-}
-
-.hidden {
-  display: none;
 }
 </style>

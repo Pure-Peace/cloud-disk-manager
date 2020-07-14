@@ -10,7 +10,11 @@ export default class File {
   constructor (path) {
     if (typeof path === 'object') Object.assign(this, path)
     else {
+      // 标记 ----------------
       this.initialed = false
+      this.selected = false
+
+      // 信息 ----------------
       this.path = path
       this.name = PATH.basename(path)
       this.dir = PATH.dirname(path)
@@ -80,6 +84,7 @@ export default class File {
     return this.timeFormat(this[timeType])
   }
 
+  // 格式化大小
   sizeFormat (size, units, digits = 2) {
     /**
      * @param {Number} size
@@ -97,7 +102,9 @@ export default class File {
   }
 
   getInfo (json = true) {
-    const { initialed, ...info } = this
+    const { initialed, selected, ...info } = this
+
+    // 目录删除无效信息（如ext和mime属性）
     if (this.isDir) {
       for (const deleteAttr of ['ext', 'mime']) {
         delete (info[deleteAttr])

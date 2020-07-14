@@ -16,7 +16,7 @@
         v-if="file"
         class="control-button"
         title="将当前项目取消选择（快捷方式：CTRL + 鼠标左键单击列表中的项目）"
-        @click="$emit('unselectFile', {idx: fileIdx, file})"
+        @click="$emit('unselectFile', file)"
       >
         <span>取消选择</span>
         <span style="padding: 0 5px;">
@@ -110,7 +110,7 @@
           <div class="file-icon-box">
             <svg-icon
               class="file-icon"
-              :icon-class="file.iconClass"
+              :icon-class="file.iconClass || ''"
             />
           </div>
           <div class="file-detail-name">
@@ -202,13 +202,9 @@ export default {
     jsonViewer
   },
   props: {
-    selectedFile: {
+    file: {
       type: Object,
       default: () => {}
-    },
-    selectedFiles: {
-      type: Array,
-      default: () => []
     },
     fileList: {
       type: Array,
@@ -222,8 +218,6 @@ export default {
   data () {
     return {
       utils,
-      file: undefined,
-      fileIdx: undefined,
       showJsonViews: false,
       dirCount: 0,
       fileCount: 0,
@@ -265,10 +259,6 @@ export default {
     }
   },
   watch: {
-    selectedFile (selection) {
-      this.file = selection && selection.file
-      this.fileIdx = selection && selection.idx
-    },
     // 计算目录及文件信息
     fileList (fileList) {
       let dirCount = 0
