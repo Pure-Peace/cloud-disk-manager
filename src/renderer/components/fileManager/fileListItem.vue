@@ -154,8 +154,6 @@ export default {
       // 文件类型专属菜单项
       const fileMenuItems = []
 
-      console.log(this)
-
       // 设置菜单
       this.$contextmenu({
         items: [

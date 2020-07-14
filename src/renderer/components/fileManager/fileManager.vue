@@ -357,10 +357,16 @@ export default {
         const currentFileIndex = this.selectedFiles.findIndex(
           fileInSelected => fileInSelected === file
         )
+
         if (currentFileIndex === -1) return
         file.selected = false
         this.selectedFiles.splice(currentFileIndex, 1)
-        this.selectedFile = this.selectedFiles[currentFileIndex - 1]
+
+        // 如果取消的是当前正在展示信息的文件，则切换到其它文件的信息展示
+        if (this.selectedFile === file) {
+          const before = currentFileIndex - 1
+          this.selectedFile = this.selectedFiles[before >= 0 ? before : this.selectedFiles.length - 1]
+        }
         this.$emit('fileUnselected', file)
         log(file, file.name, 'unselected')
       }
