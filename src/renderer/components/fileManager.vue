@@ -44,7 +44,7 @@
         >
           <span style="padding: 0 5px;">
             <svg-icon
-              :class="listingDir ? 'rorate-animate' : ''"
+              :class="listingDir === 1 ? 'rorate-animate' : ''"
               icon-class="refresh"
             />
           </span>
@@ -55,8 +55,8 @@
         />
       </div>
       <div class="file-list-box">
-        <vue-element-loading
-          :active="listingDir"
+        <vue-loading
+          :active="listingDir === 1"
           spinner="spinner"
           text="加载中..."
           color="#576AD8"
@@ -122,6 +122,7 @@
                 </div>
               </div>
             </div>
+            <empty :show="listingDir === 2 && visibleFileList.length === 0" />
           </div>
         </vue-scroll>
       </div>
@@ -146,9 +147,10 @@
 import dragResize from 'components/dragResize.vue'
 import fileInfo from 'components/fileInfo.vue'
 import utils from 'components/utils.js'
-import VueElementLoading from 'vue-element-loading'
+import vueLoading from 'vue-element-loading'
 import File from 'components/file.js'
 import dirPathBar from 'components/dirPathBar.vue'
+import empty from 'components/empty.vue'
 
 const log = console.log
 
@@ -156,8 +158,9 @@ export default {
   components: {
     dragResize,
     fileInfo,
-    VueElementLoading,
-    dirPathBar
+    vueLoading,
+    dirPathBar,
+    empty
   },
   props: {
     targetDir: {
@@ -179,7 +182,7 @@ export default {
       fileList: [],
       visibleCount: 10,
       visibleFileList: [],
-      listingDir: false,
+      listingDir: 0, // 0: 未列目录; 1: 正在列目录; 2: 已列完目录
       filters: {},
       filted: 0,
       currentDir: this.targetDir,
@@ -204,6 +207,7 @@ export default {
     }
   },
   computed: {
+    // 列表项目样式，含过滤器
     fileItemClass () {
       return (file) => {
         return 'file-item' + (this.filters[file.ext || ''] && this.filters[file.ext || ''].status === false ? ' hidden' : '')
@@ -356,7 +360,7 @@ export default {
 
     // 刷新当前目录下的文件
     handleRefreshFolder () {
-      if (this.listingDir) return
+      if (this.listingDir === 1) return
       // 非阻塞列出目录下的文件
       setImmediate(async () => {
         this.listdir(this.currentDir)
@@ -404,6 +408,7 @@ export default {
       this.selectedFile = {}
       this.selectedFiles = []
       this.fileList = []
+      this.listingDir = 0
     },
 
     // 拖动改变文件信息盒子宽度时禁止滚动事件
@@ -513,7 +518,7 @@ export default {
 
     // 非阻塞列出目录下所有文件及信息
     listdir (dirPath) {
-      this.listingDir = true
+      this.listingDir = 1
       try {
         log(`listing directory [${dirPath}]...`)
         const start = Date.now()
@@ -526,7 +531,7 @@ export default {
           // 完成
           this.fileList = fileList
           this.$emit('folderChanged', { dir: this.currentDir, fileList })
-          this.listingDir = false
+          this.listingDir = 2
 
           log(
             `directory listing completed. file total: ${
@@ -536,7 +541,7 @@ export default {
         })
       } catch (err) {
         log(`failed when listing directory [${dirPath}]`)
-        this.listingDir = false
+        this.listingDir = 2
         throw new Error(err)
       }
     },
@@ -649,6 +654,7 @@ export default {
   overflow: hidden;
   display: flex;
   position: relative;
+  min-height: calc(100% - 55px);
 }
 
 .file-list-topbar {
