@@ -4,17 +4,54 @@
       <vue-scroll :ops="scrollBarOptions">
         <div
           v-if="!file || view === 'dir'"
-          class="file-non-select-file"
+          class="file-detail-dir-view"
         >
-          <div class="file-icon-box">
-            <svg-icon
-              class="file-icon"
-              icon-class="file-box"
-            />
+          <div
+            v-show="!file"
+            style="margin-bottom: 25px;"
+          >
+            <div class="file-icon-box">
+              <svg-icon
+                class="file-icon"
+                icon-class="file-box"
+              />
+            </div>
+            <div class="file-detail-name">
+              请选择一个项目
+            </div>
           </div>
-          <div class="file-detail-name">
-            请选择一个项目
+          <div v-show="file">
+            <div class="file-icon-box">
+              <div
+                style="display: flex; width: 90%; justify-content: center;"
+              >
+                <svg-icon
+                  v-for="(selectedFile, idx) in selectedFiles"
+                  :key="`selectedFileInfo${idx}`"
+                  style="font-size: 3rem; min-height: 5px; min-width: 5px;"
+                  :icon-class="selectedFile.iconClass || ''"
+                />
+              </div>
+            </div>
+            <div class="file-detail-name">
+              已选择{{ selectedFiles.length }}个项目
+            </div>
           </div>
+          <div
+            v-if="file"
+            class="file-dirinfo-box"
+            style="margin-top: 25px;"
+          >
+            <div class="file-detail-item">
+              <div>当前项目:</div>
+              <div>{{ file.name }}</div>
+            </div>
+            <div class="file-detail-item">
+              <div>类型:</div>
+              <div>{{ file.type }}</div>
+            </div>
+          </div>
+
           <div class="file-dirinfo-box">
             <div class="file-detail-item">
               <div>当前目录:</div>
@@ -40,6 +77,7 @@
           <div
             v-if="fileCount"
             class="file-dirinfo-box"
+            style="margin-top: 10px; padding-top: 20px;"
           >
             <div
               class="file-detail-name"
@@ -172,7 +210,6 @@
         :key="`controlbtn${idx}`"
       >
         <div
-          v-if="file"
           :class="controlButtonClass(item)"
           :title="item.title"
           @click="item.handler"
@@ -199,6 +236,10 @@ export default {
       default: () => {}
     },
     fileList: {
+      type: Array,
+      default: () => []
+    },
+    selectedFiles: {
       type: Array,
       default: () => []
     },
@@ -260,8 +301,7 @@ export default {
         },
 
         {
-          title:
-            '将当前项目取消选择（快捷方式：CTRL + 鼠标左键单击列表中已选中的项目）',
+          title: '将当前项目取消选择（快捷方式：CTRL + 鼠标左键单击列表中已选中的项目）',
           label: '取消选择',
           icon: 'unselect-file',
           handler: () => this.$emit('unselectFile', this.file)
@@ -289,7 +329,8 @@ export default {
       return item => {
         return (
           'control-button' +
-          (this.view === item.view ? ' control-button-actived' : '')
+          (this.view === item.view ? ' control-button-actived' : '') +
+          (!this.file && !item.view ? ' control-button-disalbed' : '')
         )
       }
     }
@@ -325,9 +366,6 @@ export default {
     }
   },
   methods: {
-    test () {
-      console.log(111)
-    },
     fileFiltersContextmenu (event) {
       // 菜单项处理函数
       const handleFilter = (handle, status) => {
@@ -548,7 +586,12 @@ export default {
   background-color: @primary;
 }
 
-.file-non-select-file {
+.control-button-disalbed {
+  pointer-events:none;
+  filter: brightness(.95);
+}
+
+.file-detail-dir-view {
   padding: 15px;
   display: flex;
   flex-direction: column;
@@ -557,8 +600,7 @@ export default {
 
 .file-dirinfo-box {
   border-top: 1px dashed #d5d8e3;
-  margin-top: 25px;
-  padding-top: 15px;
+  padding: 5px 0;
 }
 
 .file-type-filter-button {

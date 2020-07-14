@@ -54,6 +54,7 @@
       :file="selectedFile"
       :file-list="fileList"
       :dir="currentDir"
+      :selected-files="selectedFiles"
       @filterChange="(changedFilters)=>{filters = changedFilters}"
       @unselectFile="file => handleSelectFile(file, 'unselect')"
     />

@@ -2,6 +2,7 @@
   <div
     v-drag
     class="float-button-box"
+    :title="title"
     @click="test"
   >
     <span :style="floatButtonIconStyle"><svg-icon :icon-class="icon" /></span>
@@ -60,6 +61,10 @@ export default {
     size: {
       type: Number,
       default: 22
+    },
+    title: {
+      type: String,
+      default: '单击展开菜单，按住可进行拖动'
     }
   },
   data () {
@@ -86,8 +91,8 @@ export default {
 .float-button-box {
   position: absolute;
   z-index: 50;
-  top: 85%;
-  left: 90%;
+  top: 87%;
+  left: 92%;
   height: 50px;
   width: 50px;
   border-radius: 50%;
