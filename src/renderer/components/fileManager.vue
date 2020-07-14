@@ -4,56 +4,12 @@
       ref="filelist"
       class="file-list"
     >
-      <div class="file-list-topbar">
-        <div
-          class="folder-button"
-          title="选择目录"
-          @click="handleFolderSelect"
-        >
-          <span style="padding: 0 5px;">
-            <svg-icon icon-class="dir" />
-          </span>
-          <span>目录</span>
-        </div>
-        <div
-          v-if="historys[currentDir] && historys[currentDir].from"
-          class="folder-button"
-          title="返回"
-          @click="handleBackFolder"
-        >
-          <span style="padding: 0 5px;">
-            <svg-icon icon-class="back-folder" />
-          </span>
-          <span>返回</span>
-        </div>
-        <div
-          v-if="historys[currentDir] && historys[currentDir].to"
-          class="folder-button"
-          title="前进"
-          @click="handleAheadFolder"
-        >
-          <span style="padding: 0 5px;">
-            <svg-icon icon-class="ahead-folder" />
-          </span>
-          <span>前进</span>
-        </div>
-        <div
-          class="folder-button"
-          title="刷新（F5）"
-          @click="handleRefreshFolder"
-        >
-          <span style="padding: 0 5px;">
-            <svg-icon
-              :class="listingDir === 1 ? 'rorate-animate' : ''"
-              icon-class="refresh"
-            />
-          </span>
-        </div>
-        <dir-path-bar
-          :dir="currentDir"
-          @changeDir="(dir)=> {currentDir = dir}"
-        />
-      </div>
+      <file-list-topbar
+        :dir="currentDir"
+        :listing-dir="listingDir"
+        @changeDir="(dir)=>{currentDir=dir}"
+        @refresh="handleRefreshFolder"
+      />
       <div class="file-list-box">
         <vue-loading
           :active="listingDir === 1"
@@ -77,11 +33,11 @@
               :file="file"
               :show="!(filters[file.ext] && filters[file.ext].status === false)"
               :selected-count="selectedFiles.length"
-              @handleSelect="(file, handle)=>handleSelectFile(file, handle)"
+              @handleSelect="handleSelectFile(file, handle)"
               @fileDoubleClick="handleFileDoubleClick"
               @fileClick="handleFileClick"
             />
-            <empty
+            <empty-status
               :show="listingDir === 2 && visibleFileList.length === 0"
               @contextmenu.native="emptyShowContextMenu"
             />
@@ -99,19 +55,20 @@
       :file-list="fileList"
       :dir="currentDir"
       @filterChange="(changedFilters)=>{filters = changedFilters}"
-      @unselectFile="(file)=>handleSelectFile(file, 'unselect')"
+      @unselectFile="handleSelectFile(file, 'unselect')"
     />
   </div>
 </template>
 
 <script>
+import File from 'components/file.js'
+
+// components
+import vueLoading from 'vue-element-loading'
 import dragResize from 'components/dragResize.vue'
 import fileInfo from 'components/fileInfo.vue'
-import utils from 'components/utils.js'
-import vueLoading from 'vue-element-loading'
-import File from 'components/file.js'
-import dirPathBar from 'components/dirPathBar.vue'
-import empty from 'components/empty.vue'
+import fileListTopbar from 'components/fileListTopbar.vue'
+import emptyStatus from 'components/empty.vue'
 import fileListItem from 'components/fileListItem.vue'
 
 const log = console.log
@@ -121,8 +78,8 @@ export default {
     dragResize,
     fileInfo,
     vueLoading,
-    dirPathBar,
-    empty,
+    fileListTopbar,
+    emptyStatus,
     fileListItem
   },
   props: {
@@ -137,7 +94,6 @@ export default {
   },
   data () {
     return {
-      utils,
       onCtrl: false,
       onShift: false,
       selectedFile: null,
@@ -164,7 +120,6 @@ export default {
           specifyBorderRadius: '4px'
         }
       }),
-      historys: {},
       lastScrollTop: 0,
       scrollLength: 0
     }
@@ -172,27 +127,8 @@ export default {
 
   watch: {
     // 文件目录变更
-    currentDir (currentDir, beforeDir) {
+    currentDir () {
       this.clearSelection()
-
-      // 目录变更历史记录处理，用于前进及后退
-      const historysHandler = () => {
-        if (beforeDir) {
-          if (!this.historys[beforeDir]) {
-            this.historys[beforeDir] = { to: currentDir }
-          } else if (this.historys[beforeDir].from !== currentDir) {
-            this.historys[beforeDir].to = currentDir
-          }
-
-          if (!this.historys[currentDir]) {
-            this.historys[currentDir] = { from: beforeDir }
-          } else if (this.historys[currentDir].to !== beforeDir) {
-            this.historys[currentDir].from = beforeDir
-          }
-        }
-        log(this.historys, 'dirChangeHistorys')
-      }
-      historysHandler()
       this.handleRefreshFolder()
     },
 
@@ -253,37 +189,6 @@ export default {
     this.initialCurrentDir()
   },
   methods: {
-    test (e, g, m) {
-      log(e, g, m)
-    },
-
-    // 子服务处理器，高cpu、高io的操作丢给子服务，有效防止渲染进程阻塞！
-    chokidarHandler (channel, data, subServiceName = 'chokidarService') {
-      return new Promise(resolve => {
-        const start = Date.now()
-        // 获取子服务窗口id（子服务以第二个渲染进程的形式存在）
-        const subServiceId = this.$bus.getSubService(subServiceName).win.id
-        // 生成一个事件唯一id
-        const eventId = this.$md5(
-          Date.now() + this.$bus.win.id + subServiceId + channel
-        )
-        // 发送处理
-        this.$electron.ipcRenderer.sendTo(
-          subServiceId,
-          channel,
-          Object.assign({ eventId }, data)
-        )
-        // 等待处理完成
-        this.$electron.ipcRenderer.once(eventId, (e, arg) => {
-          log(
-            `chokidarHandler event: ${eventId} resolved, time spent: ${Date.now() -
-              start}ms`
-          )
-          resolve(arg)
-        })
-      })
-    },
-
     // 当1屏的大小发生变化时，重新计算1屏的可视数据量
     visibleAeraResize () {
       const resizedVisibleCount =
@@ -322,16 +227,6 @@ export default {
       })
     },
 
-    // 前进到之前的目录（如果有）
-    handleAheadFolder () {
-      this.currentDir = this.historys[this.currentDir].to
-    },
-
-    // 返回到之前的目录（如果有）
-    handleBackFolder () {
-      this.currentDir = this.historys[this.currentDir].from
-    },
-
     // 文件双击事件
     handleFileDoubleClick (file, idx) {
       if (file.isDir) this.currentDir = file.path
@@ -341,21 +236,6 @@ export default {
     // 文件单击事件
     handleFileClick (file) {
       this.handleSelectFile(file)
-    },
-
-    // 选择目录，等效于同步方法
-    async handleFolderSelect () {
-      const selection = await this.$bus.dialog.showOpenDialog(this.$bus.win, {
-        properties: [
-          'openDirectory',
-          'showHiddenFiles',
-          'treatPackageAsDirectory'
-        ],
-        message: '请选择您要打开的目录'
-      })
-      if (!selection.canceled && selection.filePaths[0]) {
-        this.currentDir = selection.filePaths[0]
-      }
     },
 
     // 清空所有当前文件选择
@@ -411,7 +291,8 @@ export default {
         const start = Date.now()
 
         // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
-        this.chokidarHandler('listDir', { dirPath }).then(result => {
+        // 由于这是通过子服务chokidarService进行处理的，所以实际上当前进程只需要等待结果即可
+        this.$bus.chokidarHandler('listDir', { dirPath }).then(result => {
           // 由于上述过程完成的结果是通过ipc通信发送的，所以对象的方法将会丢失，因此在这里重建我们File类的方法
           const fileList = result.fileList.map(file => new File(file))
 
@@ -527,45 +408,11 @@ export default {
 </script>
 
 <style lang="less" scoped>
-@import "../themes/light.less";
-.folder-button {
-  white-space: nowrap;
-  background-color: #f1f2f6;
-  padding: 5px 8px;
-  border-radius: 4px;
-  transition: 0.2s ease;
-  font-size: 12px;
-  margin-left: 10px;
-  cursor: pointer;
-  min-height: 26px;
-  color: @primary;
-}
-
-.folder-button:hover {
-  filter: brightness(0.9);
-}
-
-.folder-button:active {
-  filter: brightness(0.8);
-}
-
 .file-list-box {
   overflow: hidden;
   display: flex;
   position: relative;
   min-height: calc(100% - 55px);
-}
-
-.file-list-topbar {
-  padding: 0 5px;
-  display: flex;
-  align-items: center;
-  border-bottom: 1px dashed #d5d8e3;
-  height: 55px;
-  min-height: 55px;
-  font-size: 12px;
-  color: #616161;
-  //box-shadow: 0 0px 4px rgba(55, 55, 77, 0.1);
 }
 
 .file-manager-box {
@@ -590,18 +437,5 @@ export default {
 
 .file-list-content {
   background-color: transparent;
-}
-
-.rorate-animate {
-  animation: circle 0.6s infinite linear;
-}
-
-@keyframes circle {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

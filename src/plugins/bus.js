@@ -1,6 +1,8 @@
 import moment from 'moment'
 const path = require('path')
-const { clipboard } = require('electron')
+const {
+  clipboard
+} = require('electron')
 
 const install = (Vue, options) => {
   const Bus = new Vue({
@@ -120,6 +122,34 @@ const install = (Vue, options) => {
           this.isBlur = false
         })
       },
+      // 子服务处理器，高cpu、高io的操作丢给子服务，有效防止渲染进程阻塞！
+      chokidarHandler (channel, data) {
+        return new Promise(resolve => {
+          const start = Date.now()
+          // 获取子服务窗口id（子服务以第二个渲染进程的形式存在）
+          const subServiceId = this.getSubService('chokidarService').win.id
+          // 生成一个事件唯一id
+          const eventId = this.$md5(
+            Date.now() + this.win.id + subServiceId + channel
+          )
+          // 发送处理
+          this.$electron.ipcRenderer.sendTo(
+            subServiceId,
+            channel,
+            Object.assign({
+              eventId
+            }, data)
+          )
+          // 等待处理完成
+          this.$electron.ipcRenderer.once(eventId, (e, arg) => {
+            console.log(
+              `chokidarHandler event: ${eventId} resolved, time spent: ${Date.now() -
+              start}ms`
+            )
+            resolve(arg)
+          })
+        })
+      },
       sizeFormat (size, units, digits = 2) {
         /**
          * @param {Number} size
@@ -128,7 +158,9 @@ const install = (Vue, options) => {
          */
         let unit
         units = units || ['B', 'KB', 'MB', 'GB', 'TB']
-        while ((unit = units.shift()) && size > 1024) { size /= 1024 }
+        while ((unit = units.shift()) && size > 1024) {
+          size /= 1024
+        }
         return (unit === 'B' ? size : size.toFixed(!digits ? 2 : digits)) + ' ' + unit
       },
       timeFormat (time) {
