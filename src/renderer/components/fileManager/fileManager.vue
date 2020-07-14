@@ -61,15 +61,16 @@
 </template>
 
 <script>
-import File from 'components/file.js'
+// fileManager components
+import File from './file.js'
+import fileListItem from './fileListItem.vue'
+import fileInfo from './fileInfo.vue'
+import fileListTopbar from './fileListTopbar.vue'
 
-// components
+// other components
 import vueLoading from 'vue-element-loading'
 import dragResize from 'components/dragResize.vue'
-import fileInfo from 'components/fileInfo.vue'
-import fileListTopbar from 'components/fileListTopbar.vue'
 import emptyStatus from 'components/emptyStatus.vue'
-import fileListItem from 'components/fileListItem.vue'
 
 const log = console.log
 

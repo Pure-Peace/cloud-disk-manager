@@ -321,7 +321,7 @@ export default {
 </script>
 
 <style lang="less" scoped>
-@import "../themes/light.less";
+@import "../../themes/light.less";
 .file-icon-box {
   display: flex;
   justify-content: center;

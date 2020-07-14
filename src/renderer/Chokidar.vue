@@ -16,7 +16,7 @@
 </template>
 
 <script>
-import File from 'components/file.js'
+import File from 'components/fileManager/file.js'
 
 const chokidar = require('chokidar')
 const log = console.log

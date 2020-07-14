@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import fileManager from 'components/fileManager.vue'
+import fileManager from 'components/fileManager/fileManager.vue'
 
 export default {
   components: {

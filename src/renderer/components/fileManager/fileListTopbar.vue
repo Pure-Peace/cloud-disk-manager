@@ -44,7 +44,7 @@
         />
       </span>
     </div>
-    <dir-path-bar
+    <file-dir-path-bar
       :dir="dir"
       @changeDir="handleChangeDir(targetDir)"
     />
@@ -52,11 +52,11 @@
 </template>
 
 <script>
-import dirPathBar from 'components/dirPathBar.vue'
+import fileDirPathBar from './fileDirPathBar.vue'
 
 export default {
   components: {
-    dirPathBar
+    fileDirPathBar
   },
   props: {
     dir: {
@@ -121,7 +121,7 @@ export default {
 </script>
 
 <style lang="less" scoped>
-@import "../themes/light.less";
+@import "../../themes/light.less";
 .folder-button {
   white-space: nowrap;
   background-color: #f1f2f6;
