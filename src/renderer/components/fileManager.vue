@@ -468,11 +468,19 @@ export default {
           }
         },
         {
-          label: '取消选择',
+          label: '从选择移除',
           disabled: !selected,
           divided: true,
           onClick: () => {
             this.handleSelectFile(file, idx, 'unselect')
+          }
+        },
+        {
+          label: '取消所有选择',
+          divided: true,
+          disabled: this.selectedFiles.length === 0,
+          onClick: () => {
+            this.handleSelectFile(file, idx, 'unselectAll')
           }
         },
         {
@@ -592,6 +600,7 @@ export default {
           target.className = target.className.replace(' file-selected', '')
         })
         this.selectedFiles = []
+        this.selectedFile = {}
       }
 
       // 获取节点及选中状态
@@ -610,6 +619,10 @@ export default {
 
         case 'isSelected':
           return selected
+
+        case 'unselectAll':
+          unselectAll()
+          return
       }
 
       // 按住ctrl进行多选处理

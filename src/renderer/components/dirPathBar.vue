@@ -70,10 +70,8 @@ export default {
         items: [
           {
             label: this.dir,
-            divided: true,
-            onClick: () => {
-              this.$bus.clipboard.writeText(this.dir)
-            }
+            disabled: true,
+            divided: true
           },
           {
             label: '复制完整路径',
