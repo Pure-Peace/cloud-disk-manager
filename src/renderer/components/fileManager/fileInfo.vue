@@ -2,32 +2,26 @@
   <div class="file-detail-box">
     <div class="file-info-control-bar">
       <div
-        v-if="file"
-        class="control-button"
-        :title="`将文件信息切换到${!showJsonViews ? '专业' : '一般'}视图显示`"
-        @click="showJsonViews = !showJsonViews"
+        v-for="(item, idx) in controlButtons"
+        :key="`controlbtn${idx}`"
       >
-        <span>{{ !showJsonViews ? '专业' : '一般' }}视图</span>
-        <span style="padding: 0 5px;">
-          <svg-icon :icon-class="!showJsonViews ? 'pro-view' : 'view'" />
-        </span>
-      </div>
-      <div
-        v-if="file"
-        class="control-button"
-        title="将当前项目取消选择（快捷方式：CTRL + 鼠标左键单击列表中的项目）"
-        @click="$emit('unselectFile', file)"
-      >
-        <span>取消选择</span>
-        <span style="padding: 0 5px;">
-          <svg-icon icon-class="unselect-file" />
-        </span>
+        <div
+          v-if="file"
+          :class="controlButtonClass(item)"
+          :title="item.title"
+          @click="item.handler"
+        >
+          <span>{{ item.label }}</span>
+          <span style="padding: 0 5px;">
+            <svg-icon :icon-class="item.icon" />
+          </span>
+        </div>
       </div>
     </div>
     <vue-scroll :ops="scrollBarOptions">
       <div slot="scroll-content">
         <div
-          v-if="!file"
+          v-if="!file || view === 'dir'"
           class="file-non-select-file"
         >
           <div class="file-icon-box">
@@ -86,7 +80,8 @@
                 @click="fileFilter.status = !fileFilter.status"
               >
                 <span class="file-filter-ext">{{ ext === ':directory:' ? '目录' : ext || '无扩展名' }}</span>
-                (<span class="file-filter-count">{{ fileFilter.count }}</span>)
+                (
+                <span class="file-filter-count">{{ fileFilter.count }}</span>)
               </div>
             </div>
             <div
@@ -100,11 +95,11 @@
           </div>
         </div>
         <json-viewer
-          v-if="file && showJsonViews"
+          v-if="file && view === 'pro'"
           :data="file.getInfo(false)"
         />
         <div
-          v-if="file && !showJsonViews"
+          v-if="file && view === 'file'"
           class="file-info-head"
         >
           <div class="file-icon-box">
@@ -118,7 +113,7 @@
           </div>
         </div>
         <div
-          v-if="file && !showJsonViews"
+          v-if="file && view === 'file'"
           class="file-detail-block"
         >
           <div class="file-detail-content">
@@ -194,7 +189,6 @@
 </template>
 
 <script>
-import utils from 'components/utils.js'
 import jsonViewer from 'components/jsonViewer.vue'
 
 export default {
@@ -217,8 +211,7 @@ export default {
   },
   data () {
     return {
-      utils,
-      showJsonViews: false,
+      view: 'file',
       dirCount: 0,
       fileCount: 0,
       sizeTotal: 0,
@@ -238,7 +231,44 @@ export default {
           specifyBorderRadius: '4px',
           gutterOfSide: '-2px'
         }
-      })
+      }),
+      controlButtons: [
+        {
+          title: '切换到文件一般信息显示',
+          view: 'file',
+          label: '文件信息',
+          icon: 'view',
+          handler: () => {
+            this.view = 'file'
+          }
+        },
+        {
+          title: '切换到文件高级信息显示',
+          view: 'pro',
+          label: '高级视图',
+          icon: 'pro-view',
+          handler: () => {
+            this.view = 'pro'
+          }
+        },
+        {
+          title: '切换到目录视图显示',
+          view: 'dir',
+          label: '目录视图',
+          icon: 'dir-view',
+          handler: () => {
+            this.view = 'dir'
+          }
+        },
+
+        {
+          title:
+            '将当前项目取消选择（快捷方式：CTRL + 鼠标左键单击列表中已选中的项目）',
+          label: '取消选择',
+          icon: 'unselect-file',
+          handler: () => this.$emit('unselectFile', this.file)
+        }
+      ]
     }
   },
   computed: {
@@ -252,9 +282,14 @@ export default {
     },
     fileTypeFilterTitleClass () {
       return (fileFilter, ext) => {
-        const type = (ext === ':directory:' ? '目录' : ext || '无扩展名文件')
-        const status = (fileFilter.status === true ? '已显示' : '已过滤')
+        const type = ext === ':directory:' ? '目录' : ext || '无扩展名文件'
+        const status = fileFilter.status === true ? '已显示' : '已过滤'
         return `项目类型：${type}; 项目数量：${fileFilter.count}; ${status}`
+      }
+    },
+    controlButtonClass () {
+      return (item) => {
+        return 'control-button' + (this.view === item.view ? ' control-button-actived' : '')
       }
     }
   },
@@ -278,7 +313,7 @@ export default {
       this.dirCount = dirCount
       this.fileCount = fileCount
       this.sizeTotal = sizeTotal
-      if (dirCount > 0) filters[':directory:'] = { status: true, count: dirCount }
+      if (dirCount > 0) { filters[':directory:'] = { status: true, count: dirCount } }
       this.fileTypeFilters = filters
       this.calcing = false
     },
@@ -289,27 +324,93 @@ export default {
   methods: {
     fileFiltersContextmenu (event) {
       // 菜单项处理函数
-      const handleChange = (handle) => {
+      const handleFilter = (handle, status) => {
         const filters = this.fileTypeFilters
         for (const key in filters) {
           const filter = filters[key]
-          if (typeof (handle) === 'boolean') filter.status = handle
-          else filter.status = !filter.status
+          switch (handle) {
+            case 'all':
+              filter.status = status
+              break
+            case 'reverse':
+              filter.status = !filter.status
+              break
+            case 'allFiles':
+              if (key !== ':directory:') filter.status = status
+              break
+            case 'allDirs':
+              if (key === ':directory:') filter.status = status
+              break
+          }
         }
         this.fileTypeFilters = filters
       }
 
       // 所有过滤器都是某个状态吗？
-      const allFiltersStatus = (status) => {
-        return !(Object.values(this.fileTypeFilters).filter(filter => filter.status === status).length > 0)
+      const not = status => {
+        return !(
+          Object.values(this.fileTypeFilters).filter(
+            filter => filter.status === status
+          ).length > 0
+        )
       }
 
       // 设置右键菜单
       this.$contextmenu({
         items: [
-          { label: '过滤全部', disabled: allFiltersStatus(true), onClick: () => { handleChange(false) } },
-          { label: '取消过滤', disabled: allFiltersStatus(false), onClick: () => { handleChange(true) } },
-          { label: '反选', onClick: () => { handleChange() } }
+          {
+            label: '过滤全部项目',
+            disabled: not(true),
+            onClick: () => {
+              handleFilter('all', false)
+            }
+          },
+          {
+            label: '取消过滤全部',
+            divided: true,
+            disabled: not(false),
+            onClick: () => {
+              handleFilter('all', true)
+            }
+          },
+          {
+            label: '过滤全部文件',
+            disabled: not(true),
+            onClick: () => {
+              handleFilter('allFiles', false)
+            }
+          },
+          {
+            label: '取消过滤文件',
+            disabled: not(false),
+            divided: true,
+            onClick: () => {
+              handleFilter('allFiles', true)
+            }
+          },
+          {
+            label: '过滤全部目录',
+            disabled: not(true),
+
+            onClick: () => {
+              handleFilter('allDirs', false)
+            }
+          },
+          {
+            label: '取消过滤目录',
+            disabled: not(false),
+
+            divided: true,
+            onClick: () => {
+              handleFilter('allDirs', true)
+            }
+          },
+          {
+            label: '反选',
+            onClick: () => {
+              handleFilter('reverse')
+            }
+          }
         ],
         event,
         zIndex: 3,
@@ -410,7 +511,9 @@ export default {
   border-bottom: 1px dashed #d5d8e3;
   height: 55px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  flex-wrap: wrap;
 }
 
 .control-button {
@@ -431,6 +534,11 @@ export default {
 
 .control-button:active {
   filter: brightness(0.8);
+}
+
+.control-button-actived {
+  color: @white;
+  background-color: @primary;
 }
 
 .file-non-select-file {
@@ -457,19 +565,19 @@ export default {
   margin-right: 8px;
   margin-bottom: 6px;
   font-size: 12px;
-  transition: .2s ease;
+  transition: 0.2s ease;
 }
 
 .file-type-filter-button:hover {
-  filter: brightness(.9);
+  filter: brightness(0.9);
 }
 
 .file-type-filter-button:active {
-  filter: brightness(.8);
+  filter: brightness(0.8);
 }
 
 .file-type-filter-enabled {
-  background-color: #B2DFDB;
+  background-color: #b2dfdb;
 }
 
 .file-filter-box {
