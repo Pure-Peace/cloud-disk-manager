@@ -287,32 +287,56 @@ export default {
     // 非阻塞列出目录下所有文件及信息
     listdir (dirPath) {
       this.listingDir = 1
-      try {
-        log(`listing directory [${dirPath}]...`)
-        const start = Date.now()
+      log(`listing directory [${dirPath}]...`)
+      const start = Date.now()
 
-        // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
-        // 由于这是通过子服务chokidarService进行处理的，所以实际上当前进程只需要等待结果即可
-        this.$bus.chokidarHandler('listDir', { dirPath }).then(result => {
-          // 由于上述过程完成的结果是通过ipc通信发送的，所以对象的方法将会丢失，因此在这里重建我们File类的方法
-          const fileList = result.fileList.map(file => new File(file))
+      // 如果之前选择过的文件没有发生改变，将重建File对象，并保留之前的选择
+      const handleHasSelectFiles = (fileList) => {
+        let tempSelectedFile = null
+        const tempSelectedFiles = []
+        const selectedFile = this.selectedFile
+        const selectedFiles = this.selectedFiles
 
-          // 完成
-          this.fileList = fileList
-          this.$emit('folderChanged', { dir: this.currentDir, fileList })
-          this.listingDir = 2
+        this.fileList = fileList.map((fileInfo) => {
+          const file = new File(fileInfo)
+          const selectedIdx = selectedFiles.findIndex(selectedFile => selectedFile.ino === file.ino)
+          if (selectedIdx !== -1) {
+            file.selected = true
+            tempSelectedFiles.push(file)
+          }
 
-          log(
-            `directory listing completed. file total: ${
-              fileList.length
-            }, time spent: ${Date.now() - start}ms`
-          )
+          if (!tempSelectedFile && selectedFile && selectedFile.ino === file.ino) {
+            file.selected = true
+            tempSelectedFile = file
+          }
+          return file
         })
-      } catch (err) {
+        this.selectedFile = tempSelectedFile
+        this.selectedFiles = tempSelectedFiles
+      }
+
+      // 一般处理，仅重建File对象
+      const handleCommon = (fileList) => {
+        this.fileList = fileList.map((fileInfo) => new File(fileInfo))
+      }
+
+      // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
+      // 由于这是通过子服务chokidarService进行处理的，所以实际上当前进程只需要等待结果即可
+      this.$bus.chokidarHandler('listDir', { dirPath }).then(result => {
+        // 由于上述过程完成的结果是通过ipc通信发送的，所以对象的方法将会丢失，因此在这里重建我们File类的方法
+        if (this.selectedFiles.length > 0) handleHasSelectFiles(result.fileList)
+        else handleCommon(result.fileList)
+
+        // 完成
+        this.$emit('folderChanged', { dir: this.currentDir, fileList: this.fileList })
+        this.listingDir = 2
+
+        log(`directory listing completed. file total: ${this.fileList.length}, time spent: ${Date.now() - start}ms`)
+      }).catch(err => {
         log(`failed when listing directory [${dirPath}]`)
         this.listingDir = 2
         throw new Error(err)
-      }
+      })
     },
 
     // 选择文件处理
