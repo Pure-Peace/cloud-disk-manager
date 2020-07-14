@@ -1,25 +1,7 @@
 <template>
   <div class="file-detail-box">
-    <div class="file-info-control-bar">
-      <div
-        v-for="(item, idx) in controlButtons"
-        :key="`controlbtn${idx}`"
-      >
-        <div
-          v-if="file"
-          :class="controlButtonClass(item)"
-          :title="item.title"
-          @click="item.handler"
-        >
-          <span>{{ item.label }}</span>
-          <span style="padding: 0 5px;">
-            <svg-icon :icon-class="item.icon" />
-          </span>
-        </div>
-      </div>
-    </div>
-    <vue-scroll :ops="scrollBarOptions">
-      <div slot="scroll-content">
+    <div style="height: calc(100% - 60px);">
+      <vue-scroll :ops="scrollBarOptions">
         <div
           v-if="!file || view === 'dir'"
           class="file-non-select-file"
@@ -182,9 +164,25 @@
             </div>
           </div>
         </div>
-        <div style="height: 55px;" />
+      </vue-scroll>
+    </div>
+    <div class="file-info-toolbar">
+      <div
+        v-for="(item, idx) in controlButtons"
+        :key="`controlbtn${idx}`"
+      >
+        <div
+          v-if="file"
+          :class="controlButtonClass(item)"
+          :title="item.title"
+          @click="item.handler"
+        >
+          <span style="padding: 0 5px;">
+            <svg-icon :icon-class="item.icon" />
+          </span>
+        </div>
       </div>
-    </vue-scroll>
+    </div>
   </div>
 </template>
 
@@ -288,8 +286,11 @@ export default {
       }
     },
     controlButtonClass () {
-      return (item) => {
-        return 'control-button' + (this.view === item.view ? ' control-button-actived' : '')
+      return item => {
+        return (
+          'control-button' +
+          (this.view === item.view ? ' control-button-actived' : '')
+        )
       }
     }
   },
@@ -313,7 +314,9 @@ export default {
       this.dirCount = dirCount
       this.fileCount = fileCount
       this.sizeTotal = sizeTotal
-      if (dirCount > 0) { filters[':directory:'] = { status: true, count: dirCount } }
+      if (dirCount > 0) {
+        filters[':directory:'] = { status: true, count: dirCount }
+      }
       this.fileTypeFilters = filters
       this.calcing = false
     },
@@ -322,6 +325,9 @@ export default {
     }
   },
   methods: {
+    test () {
+      console.log(111)
+    },
     fileFiltersContextmenu (event) {
       // 菜单项处理函数
       const handleFilter = (handle, status) => {
@@ -439,8 +445,9 @@ export default {
 
 .file-detail-box {
   flex: 1;
+  position: relative;
   border-left: 1px dashed #d5d8e3;
-  min-width: 200px;
+  min-width: 260px;
 }
 
 .file-detail-content {
@@ -463,6 +470,8 @@ export default {
   align-items: center;
   font-size: 13px;
   font-weight: bold;
+  word-wrap: normal;
+  word-break: break-all;
 }
 
 .file-info-head {
@@ -511,9 +520,7 @@ export default {
   border-bottom: 1px dashed #d5d8e3;
   height: 55px;
   align-items: center;
-  justify-content: flex-end;
-  overflow: hidden;
-  flex-wrap: wrap;
+  justify-content: space-around;
 }
 
 .control-button {
@@ -594,5 +601,17 @@ export default {
 .file-filter-ext {
   font-weight: bold;
   margin-right: 2px;
+}
+
+.file-info-toolbar {
+  position: absolute;
+  display: flex;
+  bottom: 0;
+  height: 60px;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  background-color: #FAFAFA;
+  border-top: 1px dashed #d5d8e3;
 }
 </style>

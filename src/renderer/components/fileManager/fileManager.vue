@@ -57,6 +57,7 @@
       @filterChange="(changedFilters)=>{filters = changedFilters}"
       @unselectFile="file => handleSelectFile(file, 'unselect')"
     />
+    <float-button />
   </div>
 </template>
 
@@ -71,6 +72,7 @@ import fileListTopbar from './fileListTopbar.vue'
 import vueLoading from 'vue-element-loading'
 import dragResize from 'components/dragResize.vue'
 import emptyStatus from 'components/emptyStatus.vue'
+import floatButton from 'components/floatButton.vue'
 
 const log = console.log
 
@@ -81,7 +83,8 @@ export default {
     vueLoading,
     fileListTopbar,
     emptyStatus,
-    fileListItem
+    fileListItem,
+    floatButton
   },
   props: {
     targetDir: {
