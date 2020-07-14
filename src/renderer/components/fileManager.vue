@@ -68,7 +68,7 @@ import vueLoading from 'vue-element-loading'
 import dragResize from 'components/dragResize.vue'
 import fileInfo from 'components/fileInfo.vue'
 import fileListTopbar from 'components/fileListTopbar.vue'
-import emptyStatus from 'components/empty.vue'
+import emptyStatus from 'components/emptyStatus.vue'
 import fileListItem from 'components/fileListItem.vue'
 
 const log = console.log
