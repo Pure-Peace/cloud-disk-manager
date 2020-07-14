@@ -33,7 +33,7 @@
               :file="file"
               :show="!(filters[file.ext] && filters[file.ext].status === false)"
               :selected-count="selectedFiles.length"
-              @handleSelect="handleSelectFile(file, handle)"
+              @handleSelect="(file, handle)=>handleSelectFile(file, handle)"
               @fileDoubleClick="handleFileDoubleClick"
               @fileClick="handleFileClick"
             />
@@ -55,7 +55,7 @@
       :file-list="fileList"
       :dir="currentDir"
       @filterChange="(changedFilters)=>{filters = changedFilters}"
-      @unselectFile="handleSelectFile(file, 'unselect')"
+      @unselectFile="file => handleSelectFile(file, 'unselect')"
     />
   </div>
 </template>
@@ -392,19 +392,21 @@ export default {
           return
       }
 
-      // 按住ctrl进行多选处理
-      if (this.onCtrl) {
+      // 多选处理
+      const handleMultiple = () => {
         if (selected) unselect()
         else select(true)
-      } else {
-        // 单选处理
-        if (!selected) {
-          unselectAll()
-          select()
-        } else {
-          this.selectedFile = file
-        }
       }
+
+      // 单选处理
+      const handleSingle = () => {
+        if (this.selectedFiles.length > 0 || this.selectedFile) unselectAll()
+        select()
+      }
+
+      // 按住ctrl进行多选处理
+      if (this.onCtrl) handleMultiple()
+      else if (!selected) handleSingle()
     },
 
     // 监听按键按下状态
