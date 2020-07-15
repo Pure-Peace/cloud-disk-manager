@@ -2,170 +2,59 @@
   <div class="file-detail-box">
     <div style="height: calc(100% - 60px);">
       <vue-scroll :ops="scrollBarOptions">
-        <div
-          v-if="view !== 'search' && !file || view === 'dir'"
-          class="file-detail-dir-view"
-        >
+        <div style="padding: 8px;">
           <div
-            v-show="!file"
-            style="margin-bottom: 25px;"
+            v-if="view !== 'search' && !file || view === 'dir'"
+            class="file-detail-dir-view"
           >
-            <div class="file-icon-box">
-              <svg-icon
-                class="file-icon"
-                icon-class="file-box"
-              />
-            </div>
-            <div class="file-detail-name">
-              请选择一个项目
-            </div>
-          </div>
-          <div v-show="file">
-            <div class="file-icon-box">
-              <div style="display: flex; width: 90%; justify-content: center;">
+            <div
+              v-show="!file"
+              style="margin-bottom: 25px;"
+            >
+              <div class="file-icon-box">
                 <svg-icon
-                  v-for="(selectedFile, idx) in selectedFiles"
-                  :key="`selectedFileInfo${idx}`"
-                  style="font-size: 3rem; min-height: 5px; min-width: 5px;"
-                  :icon-class="selectedFile.iconClass || ''"
+                  class="file-icon"
+                  icon-class="file-box"
                 />
               </div>
-            </div>
-            <div class="file-detail-name">
-              已选择{{ selectedFiles.length }}个项目
-            </div>
-          </div>
-          <div
-            v-if="file"
-            class="file-dirinfo-box"
-            style="margin-top: 25px;"
-          >
-            <div class="file-detail-item">
-              <div>当前项目:</div>
-              <div>{{ file.name }}</div>
-            </div>
-            <div class="file-detail-item">
-              <div>类型:</div>
-              <div>{{ file.type }}</div>
-            </div>
-          </div>
-
-          <div class="file-dirinfo-box">
-            <div class="file-detail-item">
-              <div>当前目录:</div>
-              <div>{{ dir }}</div>
-            </div>
-            <div class="file-detail-item">
-              <div>项目总数:</div>
-              <div>{{ fileList.length }}</div>
-            </div>
-            <div class="file-detail-item">
-              <div>目录数:</div>
-              <div>{{ calcing ? '计算中...' : dirCount }}</div>
-            </div>
-            <div class="file-detail-item">
-              <div>文件数:</div>
-              <div>{{ calcing ? '计算中...' : fileCount }}</div>
-            </div>
-            <div class="file-detail-item">
-              <div>估计目录大小:</div>
-              <div>{{ calcing ? '计算中...' : $bus.sizeFormat(sizeTotal) }}</div>
-            </div>
-          </div>
-          <div
-            v-if="fileCount"
-            class="file-dirinfo-box"
-            style="margin-top: 10px; padding-top: 20px;"
-          >
-            <div
-              class="file-detail-name"
-              style="user-select: none;"
-              title="单击下列项目选择过滤指定的文件类型，右键单击此处可查看菜单"
-              @contextmenu.prevent="fileFiltersContextmenu"
-            >
-              类型过滤器
-            </div>
-            <div
-              v-if="!calcing"
-              class="file-filter-box"
-              @contextmenu.prevent="fileFiltersContextmenu"
-            >
-              <div
-                v-for="(fileFilter, ext) in fileTypeFilters"
-                :key="ext + 'filter'"
-                :class="fileTypeFilterButtonClass(fileFilter.status)"
-                :title="fileTypeFilterTitle(fileFilter, ext)"
-                @click="fileFilter.status = !fileFilter.status"
-              >
-                <span class="file-filter-ext">{{ ext === ':directory:' ? '目录' : ext || '无扩展名' }}</span>
-                (
-                <span class="file-filter-count">{{ fileFilter.count }}</span>)
-              </div>
-            </div>
-            <div
-              v-if="calcing"
-              class="file-filter-box"
-            >
-              <div class="file-type-filter-button">
-                文件类型计算中...
-              </div>
-            </div>
-          </div>
-        </div>
-        <json-viewer
-          v-if="file && view === 'pro'"
-          :data="file.getInfo(false)"
-        />
-        <div
-          v-show="view==='search'"
-          class="file-search-panel-box"
-        >
-          <div class="file-detail-name">
-            文件搜索
-          </div>
-          <div style="padding: 20px 0;">
-            <div class="file-search-input-box">
-              <div
-                v-show="searchValue"
-                class="file-search-input-button"
-                @click="handleSearch('clear')"
-              >
-                <svg-icon icon-class="close" />
-              </div>
-              <input
-                ref="fileSearchInput"
-                placeholder="输入要搜索的文件名"
-                class="file-search-input"
-                @input="handleSearchInput"
-                @keypress.enter="handleSearch"
-              >
-            </div>
-            <div
-              class="file-dirinfo-box"
-              style="margin-top: 25px; padding-top: 20px;"
-            >
               <div class="file-detail-name">
-                搜索配置项
+                请选择一个项目
               </div>
-              <div style="display: flex; justify-content: center; margin-top: 20px;">
-                <div
-                  v-for="(item, name) in searchOptions"
-                  :key="`${name}status`"
-                  style="font-size: 12px;"
-                  :class="searchControlButtonClass(item)"
-                  @click="item.status = !item.status"
-                >
-                  <span>{{ item.label }}</span>
-                  <span style="padding: 0 5px;">
-                    <svg-icon :icon-class="item.icon || ''" />
-                  </span>
+            </div>
+            <div v-show="file">
+              <div class="file-icon-box">
+                <div style="display: flex; width: 90%; justify-content: center; overflow: hidden;">
+                  <div
+                    v-for="(selectedFile, idx) in selectedFiles"
+                    :key="`selectedFileInfo${idx}`"
+                  >
+                    <svg-icon
+                      style="font-size: 3rem; min-height: 5px; min-width: 5px;"
+                      :icon-class="selectedFile.iconClass || ''"
+                    />
+                  </div>
                 </div>
               </div>
+              <div class="file-detail-name">
+                已选择{{ selectedFiles.length }}个项目
+              </div>
             </div>
             <div
+              v-if="file"
               class="file-dirinfo-box"
-              style="margin-top: 15px; padding-top: 20px;"
+              style="margin-top: 25px;"
             >
+              <div class="file-detail-item">
+                <div>当前项目:</div>
+                <div>{{ file.name }}</div>
+              </div>
+              <div class="file-detail-item">
+                <div>类型:</div>
+                <div>{{ file.type }}</div>
+              </div>
+            </div>
+
+            <div class="file-dirinfo-box">
               <div class="file-detail-item">
                 <div>当前目录:</div>
                 <div>{{ dir }}</div>
@@ -175,33 +64,20 @@
                 <div>{{ fileList.length }}</div>
               </div>
               <div class="file-detail-item">
-                <div>已选文件:</div>
-                <div>{{ selectedFiles.length }}</div>
+                <div>目录数:</div>
+                <div>{{ calcing ? '计算中...' : dirCount }}</div>
               </div>
-              <div
-                v-if="file"
-                class="file-detail-item"
-              >
-                <div>当前选择:</div>
-                <div>{{ file.name }}</div>
+              <div class="file-detail-item">
+                <div>文件数:</div>
+                <div>{{ calcing ? '计算中...' : fileCount }}</div>
               </div>
-            </div>
-            <div
-              v-if="searchValue"
-              class="file-dirinfo-box"
-              style="margin-top: 10px; padding-top: 20px;"
-            >
-              <div class="file-detail-name">
-                搜索结果
-              </div>
-              <div
-                style="display: flex; justify-content: center; margin-top: 10px; font-size: 13px;"
-              >
-                <div>在{{ fileList.length }}个项目里找到了{{ visibleList.length }}条结果</div>
+              <div class="file-detail-item">
+                <div>估计目录大小:</div>
+                <div>{{ calcing ? '计算中...' : $bus.sizeFormat(sizeTotal) }}</div>
               </div>
             </div>
             <div
-              v-if="visibleList.length"
+              v-if="fileCount"
               class="file-dirinfo-box"
               style="margin-top: 10px; padding-top: 20px;"
             >
@@ -240,88 +116,250 @@
               </div>
             </div>
           </div>
-        </div>
-        <div
-          v-if="file && view === 'file'"
-          class="file-info-head"
-        >
-          <div class="file-icon-box">
-            <svg-icon
-              class="file-icon"
-              :icon-class="file.iconClass || ''"
-            />
-          </div>
-          <div class="file-detail-name">
-            {{ file.name }}
-          </div>
-        </div>
-        <div
-          v-if="file && view === 'file'"
-          class="file-detail-block"
-        >
-          <div class="file-detail-content">
-            <div class="file-detail-item">
-              <div>类型:</div>
-              <div>{{ file.type }}</div>
-            </div>
-
-            <div class="file-detail-item">
-              <div>大小:</div>
-              <div v-if="file.size">
-                {{ file.sizeFormatted }}
+          <div v-if="file && view === 'pro'">
+            <div style="padding: 15px;">
+              <div class="file-icon-box">
+                <svg-icon
+                  class="file-icon"
+                  :icon-class="file.iconClass"
+                />
               </div>
-              <div v-else>
-                未计算
+              <div class="file-detail-name">
+                {{ file.name }}
               </div>
-            </div>
+              <div
+                class="file-dirinfo-box"
+                style="margin-top: 25px; padding-top: 5px;"
+              >
+                <div class="file-detail-item">
+                  <div>类型:</div>
+                  <div>{{ file.type }}</div>
+                </div>
 
-            <div
-              v-if="!file.isDir && file.ext"
-              class="file-detail-item"
-            >
-              <div>文件后缀:</div>
-              <div>{{ file.ext }}</div>
-            </div>
-
-            <div
-              v-if="file.mime"
-              class="file-detail-item"
-            >
-              <div>MIME:</div>
-              <div>{{ file.mime }}</div>
-            </div>
-          </div>
-          <div class="file-detail-content">
-            <div class="file-detail-item">
-              <div>所在目录:</div>
-              <div>{{ file.dir }}</div>
-            </div>
-
-            <div class="file-detail-item">
-              <div>完整路径:</div>
-              <div>{{ file.path }}</div>
+                <div
+                  class="file-detail-item"
+                >
+                  <div>大小:</div>
+                  <div>
+                    {{ file.size ? file.sizeFormatted : '-' }}
+                  </div>
+                </div>
+                <div class="file-detail-item">
+                  <div>已选文件:</div>
+                  <div>{{ selectedFiles.length }}</div>
+                </div>
+              </div>
+              <div class="file-dirinfo-box">
+                <json-viewer
+                  :data="file.getInfo(false)"
+                />
+              </div>
             </div>
           </div>
           <div
-            v-if="file.initialed"
-            class="file-detail-content"
+            v-show="view==='search'"
+            class="file-search-panel-box"
           >
-            <div
-              v-for="timeType in file.timeTypes"
-              :key="`file-${timeType}`"
-              class="file-detail-item"
-            >
-              <div>{{ file.timeTypeFormatted(timeType) }}:</div>
-              <div>{{ file.timeFormatted(timeType) }}</div>
+            <div class="file-detail-name">
+              文件搜索
+            </div>
+            <div style="padding: 20px 0;">
+              <div class="file-search-input-box">
+                <div
+                  v-show="searchValue"
+                  class="file-search-input-button"
+                  @click="handleSearch('clear')"
+                >
+                  <svg-icon icon-class="close" />
+                </div>
+                <input
+                  ref="fileSearchInput"
+                  placeholder="输入要搜索的文件名"
+                  class="file-search-input"
+                  @input="handleSearchInput"
+                  @keypress.enter="handleSearch"
+                >
+              </div>
+              <div
+                class="file-dirinfo-box"
+                style="margin-top: 25px; padding-top: 20px;"
+              >
+                <div class="file-detail-name">
+                  搜索配置项
+                </div>
+                <div style="display: flex; justify-content: center; margin-top: 20px;">
+                  <div
+                    v-for="(item, name) in searchOptions"
+                    :key="`${name}status`"
+                    style="font-size: 12px;"
+                    :class="searchControlButtonClass(item)"
+                    @click="item.status = !item.status"
+                  >
+                    <span>{{ item.label }}</span>
+                    <span style="padding: 0 5px;">
+                      <svg-icon :icon-class="item.icon || ''" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="file-dirinfo-box"
+                style="margin-top: 15px; padding-top: 20px;"
+              >
+                <div class="file-detail-item">
+                  <div>当前目录:</div>
+                  <div>{{ dir }}</div>
+                </div>
+                <div class="file-detail-item">
+                  <div>项目总数:</div>
+                  <div>{{ fileList.length }}</div>
+                </div>
+                <div class="file-detail-item">
+                  <div>已选文件:</div>
+                  <div>{{ selectedFiles.length }}</div>
+                </div>
+                <div
+                  v-if="file"
+                  class="file-detail-item"
+                >
+                  <div>当前选择:</div>
+                  <div>{{ file.name }}</div>
+                </div>
+              </div>
+              <div
+                v-if="searchValue"
+                class="file-dirinfo-box"
+                style="margin-top: 10px; padding-top: 20px;"
+              >
+                <div class="file-detail-name">
+                  搜索结果
+                </div>
+                <div
+                  style="display: flex; justify-content: center; margin-top: 10px; font-size: 13px;"
+                >
+                  <div>在{{ fileList.length }}个项目里找到了{{ visibleList.length }}条结果</div>
+                </div>
+              </div>
+              <div
+                v-if="visibleList.length"
+                class="file-dirinfo-box"
+                style="margin-top: 10px; padding-top: 20px;"
+              >
+                <div
+                  class="file-detail-name"
+                  style="user-select: none;"
+                  title="单击下列项目选择过滤指定的文件类型，右键单击此处可查看菜单"
+                  @contextmenu.prevent="fileFiltersContextmenu"
+                >
+                  类型过滤器
+                </div>
+                <div
+                  v-if="!calcing"
+                  class="file-filter-box"
+                  @contextmenu.prevent="fileFiltersContextmenu"
+                >
+                  <div
+                    v-for="(fileFilter, ext) in fileTypeFilters"
+                    :key="ext + 'filter'"
+                    :class="fileTypeFilterButtonClass(fileFilter.status)"
+                    :title="fileTypeFilterTitle(fileFilter, ext)"
+                    @click="fileFilter.status = !fileFilter.status"
+                  >
+                    <span class="file-filter-ext">{{ ext === ':directory:' ? '目录' : ext || '无扩展名' }}</span>
+                    (
+                    <span class="file-filter-count">{{ fileFilter.count }}</span>)
+                  </div>
+                </div>
+                <div
+                  v-if="calcing"
+                  class="file-filter-box"
+                >
+                  <div class="file-type-filter-button">
+                    文件类型计算中...
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div
-            v-if="!file.initialed"
-            class="file-detail-content"
+            v-if="file && view === 'file'"
+            class="file-info-head"
           >
-            <div class="file-detail-item">
-              <div>文件信息:</div>
-              <div>{{ file.note }}</div>
+            <div class="file-icon-box">
+              <svg-icon
+                class="file-icon"
+                :icon-class="file.iconClass || ''"
+              />
+            </div>
+            <div class="file-detail-name">
+              {{ file.name }}
+            </div>
+          </div>
+          <div
+            v-if="file && view === 'file'"
+            class="file-detail-block"
+          >
+            <div class="file-detail-content">
+              <div class="file-detail-item">
+                <div>类型:</div>
+                <div>{{ file.type }}</div>
+              </div>
+
+              <div class="file-detail-item">
+                <div>大小:</div>
+                <div>
+                  {{ file.size ? file.sizeFormatted : '-' }}
+                </div>
+              </div>
+
+              <div
+                v-if="!file.isDir && file.ext"
+                class="file-detail-item"
+              >
+                <div>文件后缀:</div>
+                <div>{{ file.ext }}</div>
+              </div>
+
+              <div
+                v-if="file.mime"
+                class="file-detail-item"
+              >
+                <div>MIME:</div>
+                <div>{{ file.mime }}</div>
+              </div>
+            </div>
+            <div class="file-detail-content">
+              <div class="file-detail-item">
+                <div>所在目录:</div>
+                <div>{{ file.dir }}</div>
+              </div>
+
+              <div class="file-detail-item">
+                <div>完整路径:</div>
+                <div>{{ file.path }}</div>
+              </div>
+            </div>
+            <div
+              v-if="file.initialed"
+              class="file-detail-content"
+            >
+              <div
+                v-for="timeType in file.timeTypes"
+                :key="`file-${timeType}`"
+                class="file-detail-item"
+              >
+                <div>{{ file.timeTypeFormatted(timeType) }}:</div>
+                <div>{{ file.timeFormatted(timeType) }}</div>
+              </div>
+            </div>
+            <div
+              v-if="!file.initialed"
+              class="file-detail-content"
+            >
+              <div class="file-detail-item">
+                <div>文件信息:</div>
+                <div>{{ file.note }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -395,13 +433,13 @@ export default {
         },
         bar: {
           specifyBorderRadius: '4px',
-          size: '6px',
+          size: '4px',
           showDelay: 500
         },
         rail: {
-          size: '6px',
+          size: '4px',
           specifyBorderRadius: '4px',
-          gutterOfSide: '-2px'
+          gutterOfSide: '2px'
         }
       }),
       controlButtons: [
@@ -707,7 +745,7 @@ export default {
   flex: 1;
   position: relative;
   //border-left: 1px dashed #d5d8e3;
-  min-width: 300px;
+  min-width: 320px;
   box-shadow: 0 0px 4px rgba(55, 55, 77, 0.1);
 }
 
@@ -860,7 +898,7 @@ export default {
 
 .file-filter-box {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   padding: 15px 0;
   flex-wrap: wrap;
 }
@@ -887,7 +925,7 @@ export default {
 }
 
 .file-search-panel-box {
-  padding: 10px;
+  padding: 15px;
 }
 
 .file-search-input {

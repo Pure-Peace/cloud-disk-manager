@@ -15,7 +15,7 @@
     <div style="display: flex; justify-content: space-between; width: calc(100% - 48px);">
       <div
         class="file-self-box"
-        style="width: calc(100% - 280px);"
+        style="width: calc(100% - 280px); min-width: 260px;"
       >
         <div class="file-name">
           {{ file.name }}
@@ -28,50 +28,30 @@
         </div>
       </div>
       <div
-        class="file-self-box"
-        style="display: flex; flex-direction: column; justify-content: space-between; min-width: 230px;"
+        v-if="file.initialed"
+        class="file-self-box last-self-box"
       >
         <div class="file-info">
           <span>大小:</span>
-          <span style="color: #000000; margin-left: 8px;">{{ file.sizeFormatted }}</span>
+          <span class="info-text">{{ file.isDir ? '-' : file.sizeFormatted }}</span>
         </div>
 
         <div class="file-info">
           <span>修改时间:</span>
-          <span style="color: #000000; margin-left: 8px;">{{ file.timeFormatted('ctime') }}</span>
+          <span class="info-text">{{ file.timeFormatted('ctime') }}</span>
+        </div>
+      </div>
+      <div
+        v-if="!file.initialed"
+        class="file-self-box last-self-box"
+        style="justify-content: center;"
+      >
+        <div class="file-info">
+          <span>信息:</span>
+          <span class="info-text">无访问权限</span>
         </div>
       </div>
     </div>
-
-    <!--div class="file-info-box">
-        <div class="file-info">
-          类型: {{ file.type }}
-        </div>
-        <div
-          v-if="file.initialed"
-          class="file-info"
-        >
-          {{ file.timeTypeFormatted('ctime') }} {{ file.timeFormatted('ctime') }}
-        </div>
-        <div
-          v-if="!file.initialed"
-          class="file-info"
-        >
-          无访问权限
-        </div>
-        <div
-          v-if="file.isFile"
-          class="file-info"
-        >
-          {{ file.sizeFormatted }}
-        </div>
-        <div
-          v-else
-          class="file-info"
-        >
-          未计算
-        </div>
-      </div-->
   </div>
 </template>
 
@@ -278,5 +258,17 @@ export default {
   background-color: #EDF0FF !important;
   border-left: 1px solid rgba(210, 214, 241, .6);
   border-right: 1px solid rgba(210, 214, 241, .6);
+}
+
+.last-self-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 230px;
+}
+
+.info-text {
+  color: #000000;
+  margin-left: 8px;
 }
 </style>

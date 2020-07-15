@@ -62,7 +62,6 @@ export default {
 .json-viewer-box {
   display: flex;
   flex-direction: column;
-  padding: 5px 15px;
 }
 
 .json-viewer-title-box {
