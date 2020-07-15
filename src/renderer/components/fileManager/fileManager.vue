@@ -231,9 +231,11 @@ export default {
     this.initialCurrentDir()
   },
   methods: {
+    // 文件搜索
     handleSearchFile (searchOptions) {
       const searchResutlList = []
-      const { value } = searchOptions
+      const value = searchOptions.value.trim()
+      if (this.searchValue === value) return
       this.searchValue = value
       let searchMethod
 

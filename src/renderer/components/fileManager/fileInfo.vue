@@ -124,7 +124,14 @@
             文件搜索
           </div>
           <div style="padding: 20px 0;">
-            <div>
+            <div class="file-search-input-box">
+              <div
+                v-show="searchValue"
+                class="file-search-input-button"
+                @click="handleClearSearch"
+              >
+                <svg-icon icon-class="close" />
+              </div>
               <input
                 ref="fileSearchInput"
                 placeholder="输入要搜索的文件名"
@@ -176,7 +183,9 @@
               <div class="file-detail-name">
                 搜索结果
               </div>
-              <div style="display: flex; justify-content: center; margin-top: 10px; font-size: 13px;">
+              <div
+                style="display: flex; justify-content: center; margin-top: 10px; font-size: 13px;"
+              >
                 <div>在{{ fileList.length }}个项目里找到了{{ visibleList.length }}条结果</div>
               </div>
             </div>
@@ -436,7 +445,11 @@ export default {
         }
       ],
       searchOptions: {
-        caseSensitive: { status: false, label: '区分大小写', icon: 'caseSensitive' },
+        caseSensitive: {
+          status: false,
+          label: '区分大小写',
+          icon: 'caseSensitive'
+        },
         congruent: { status: false, label: '全等', icon: 'congruent' },
         regexp: { status: false, label: '正则表达式', icon: 'regexp' }
       }
@@ -479,8 +492,9 @@ export default {
     // 搜索控制按钮样式
     searchControlButtonClass () {
       return item => {
-        return 'control-button' +
-        (item.status ? ' control-button-actived' : '')
+        return (
+          'control-button' + (item.status ? ' control-button-actived' : '')
+        )
       }
     }
   },
@@ -502,6 +516,10 @@ export default {
     // 文件类型过滤器更改
     fileTypeFilters (filters) {
       this.$emit('filterChange', filters)
+    },
+
+    searchValue (val) {
+      this.$refs.fileSearchInput.value = val
     }
   },
   methods: {
@@ -531,6 +549,12 @@ export default {
       this.calcing = false
     },
 
+    // 取消搜索
+    handleClearSearch () {
+      this.$refs.fileSearchInput.value = ''
+      this.$emit('searchFile', Object.assign({ value: '' }, this.searchOptions))
+    },
+
     // 输入框输入事件
     handleSearchInput () {
       // 文件较多时采用延时搜索，防止性能大量消耗
@@ -540,15 +564,15 @@ export default {
           this.handleSearch()
         }, 300)
         // 少量文件时搜索时间往往在数十毫秒左右，无需优化
-      } else { this.handleSearch() }
+      } else {
+        this.handleSearch()
+      }
     },
 
     // 搜索处理
     handleSearch () {
-      this.$nextTick(() => {
-        const { value } = this.$refs.fileSearchInput
-        this.$emit('searchFile', Object.assign({ value }, this.searchOptions))
-      })
+      const { value } = this.$refs.fileSearchInput
+      this.$emit('searchFile', Object.assign({ value }, this.searchOptions))
     },
 
     // 文件过滤器右键上下文菜单
@@ -858,16 +882,44 @@ export default {
   width: 100%;
   outline: none;
   height: 40px;
-  background: #F1F1F1;
-  border: 2px solid #F1F1F1;
-  padding: 8px;
+  background: #f1f1f1;
+  border: 2px solid #f1f1f1;
+  padding: 8px 30px 8px 8px;
   border-radius: 4px;
 }
 
 .file-search-input:hover {
-  border-color: #7A94FF;
+  border-color: #7a94ff;
 }
+
 .file-search-input:focus {
-  border-color: #7A94FF;
+  border-color: #7a94ff;
+}
+
+.file-search-input-box {
+  position: relative;
+}
+
+.file-search-input-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 4px;
+  z-index: 3;
+  padding: 5px;
+  font-size: 18px;
+  height: 100%;
+  transition: .2s ease;
+  color: #424242;
+  cursor: pointer;
+}
+
+.file-search-input-button:hover {
+  color: #393939;
+}
+
+.file-search-input-button:active {
+  filter: brightness(.8);
 }
 </style>
