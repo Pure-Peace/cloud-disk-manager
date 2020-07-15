@@ -10,6 +10,7 @@ const install = (Vue, options) => {
       return {
         process,
         clipboard, // electron clipboard object
+        keys: {},
         sep: path.sep,
         set: Vue.set,
         isFocus: false,
@@ -116,6 +117,7 @@ const install = (Vue, options) => {
         this.win.on('blur', () => {
           this.isBlur = true
           this.isFocus = false
+          this.keys = {}
         })
         this.win.on('focus', () => {
           this.isFocus = true

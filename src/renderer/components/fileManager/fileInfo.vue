@@ -117,7 +117,7 @@
           :data="file.getInfo(false)"
         />
         <div
-          v-if="view==='search'"
+          v-show="view==='search'"
           class="file-search-panel-box"
         >
           <div class="file-detail-name">
@@ -127,10 +127,97 @@
             <div>
               <input
                 ref="fileSearchInput"
-                placeholder="输入文件名（支持正则表达式）"
+                placeholder="输入要搜索的文件名"
                 class="file-search-input"
+                @input="handleSearchInput"
                 @keypress.enter="handleSearch"
               >
+            </div>
+            <div
+              class="file-dirinfo-box"
+              style="margin-top: 25px; padding-top: 20px;"
+            >
+              <div class="file-detail-name">
+                配置项
+              </div>
+              <div style="display: flex; justify-content: center; margin-top: 20px;">
+                <div
+                  v-for="(item, name) in searchOptions"
+                  :key="`${name}status`"
+                  style="font-size: 12px;"
+                  :class="searchControlButtonClass(item)"
+                  @click="item.status = !item.status"
+                >
+                  <span>{{ item.label }}</span>
+                  <span style="padding: 0 5px;">
+                    <svg-icon :icon-class="item.icon || ''" />
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div
+              class="file-dirinfo-box"
+              style="margin-top: 15px; padding-top: 20px;"
+            >
+              <div class="file-detail-item">
+                <div>当前目录:</div>
+                <div>{{ dir }}</div>
+              </div>
+              <div class="file-detail-item">
+                <div>项目总数:</div>
+                <div>{{ fileList.length }}</div>
+              </div>
+            </div>
+            <div
+              v-if="searchValue"
+              class="file-dirinfo-box"
+              style="margin-top: 25px; padding-top: 20px;"
+            >
+              <div class="file-detail-name">
+                搜索结果
+              </div>
+              <div style="display: flex; justify-content: center; margin-top: 10px; font-size: 13px;">
+                <div>在{{ fileList.length }}个项目里找到了{{ visibleList.length }}条结果</div>
+              </div>
+            </div>
+            <div
+              v-if="visibleList.length"
+              class="file-dirinfo-box"
+              style="margin-top: 10px; padding-top: 20px;"
+            >
+              <div
+                class="file-detail-name"
+                style="user-select: none;"
+                title="单击下列项目选择过滤指定的文件类型，右键单击此处可查看菜单"
+                @contextmenu.prevent="fileFiltersContextmenu"
+              >
+                类型过滤器
+              </div>
+              <div
+                v-if="!calcing"
+                class="file-filter-box"
+                @contextmenu.prevent="fileFiltersContextmenu"
+              >
+                <div
+                  v-for="(fileFilter, ext) in fileTypeFilters"
+                  :key="ext + 'filter'"
+                  :class="fileTypeFilterButtonClass(fileFilter.status)"
+                  :title="fileTypeFilterTitleClass(fileFilter, ext)"
+                  @click="fileFilter.status = !fileFilter.status"
+                >
+                  <span class="file-filter-ext">{{ ext === ':directory:' ? '目录' : ext || '无扩展名' }}</span>
+                  (
+                  <span class="file-filter-count">{{ fileFilter.count }}</span>)
+                </div>
+              </div>
+              <div
+                v-if="calcing"
+                class="file-filter-box"
+              >
+                <div class="file-type-filter-button">
+                  文件类型计算中...
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -263,6 +350,14 @@ export default {
     dir: {
       type: String,
       default: ''
+    },
+    visibleList: {
+      type: Array,
+      default: () => []
+    },
+    searchValue: {
+      type: String,
+      default: ''
     }
   },
   data () {
@@ -272,6 +367,7 @@ export default {
       fileCount: 0,
       sizeTotal: 0,
       calcing: false,
+      searchInputTimeout: 0,
       fileTypeFilters: {},
       scrollBarOptions: this.$bus.mixinScrollBarOptions({
         vuescroll: {
@@ -340,10 +436,9 @@ export default {
         }
       ],
       searchOptions: {
-        notCaseSensitive: false,
-        caseSensitive: false,
-        congruent: false,
-        regexp: false
+        caseSensitive: { status: false, label: '区分大小写', icon: 'caseSensitive' },
+        congruent: { status: false, label: '全等', icon: 'congruent' },
+        regexp: { status: false, label: '正则表达式', icon: 'regexp' }
       }
     }
   },
@@ -374,11 +469,32 @@ export default {
             : '')
         )
       }
+    },
+    searchControlButtonClass () {
+      return item => {
+        return 'control-button' +
+        (item.status ? ' control-button-actived' : '')
+      }
     }
   },
   watch: {
     // 计算目录及文件信息
-    fileList (fileList) {
+    visibleList (fileList) {
+      if (this.searchValue) this.filterCalculator(fileList)
+      else this.filterCalculator(this.fileList)
+    },
+    searchOptions: {
+      handler: function (val) {
+        this.handleSearch()
+      },
+      deep: true
+    },
+    fileTypeFilters (filters) {
+      this.$emit('filterChange', filters)
+    }
+  },
+  methods: {
+    filterCalculator (fileList) {
       let dirCount = 0
       let fileCount = 0
       let sizeTotal = 0
@@ -402,14 +518,22 @@ export default {
       this.fileTypeFilters = filters
       this.calcing = false
     },
-    fileTypeFilters (filters) {
-      this.$emit('filterChange', filters)
-    }
-  },
-  methods: {
+
+    handleSearchInput () {
+      // 文件较多时采用延时搜索，防止性能大量消耗
+      if (this.fileList.length > 200) {
+        if (this.searchInputTimeout) clearTimeout(this.searchInputTimeout)
+        this.searchInputTimeout = setTimeout(() => {
+          this.handleSearch()
+        }, 300)
+        // 少量文件时搜索时间往往在数十毫秒左右，无需优化
+      } else { this.handleSearch() }
+    },
+
     handleSearch () {
       this.$nextTick(() => {
-        this.$emit('searchFile', Object.assign(this.searchOptions, { value: this.$refs.fileSearchInput.value }))
+        const { value } = this.$refs.fileSearchInput
+        this.$emit('searchFile', Object.assign({ value }, this.searchOptions))
       })
     },
 
@@ -532,7 +656,7 @@ export default {
   flex: 1;
   position: relative;
   border-left: 1px dashed #d5d8e3;
-  min-width: 280px;
+  min-width: 300px;
 }
 
 .file-detail-content {

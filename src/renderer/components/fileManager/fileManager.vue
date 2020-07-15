@@ -54,6 +54,8 @@
       :file="selectedFile"
       :file-list="fileList"
       :dir="currentDir"
+      :search-value="searchValue"
+      :visible-list="visibleFileList"
       :selected-files="selectedFiles"
       @filterChange="(changedFilters)=>{filters = changedFilters}"
       @unselectFile="file => handleSelectFile(file, 'unselect')"
@@ -136,17 +138,15 @@ export default {
   },
   data () {
     return {
-      onCtrl: false,
-      onShift: false,
       selectedFile: null,
       selectedFiles: [],
       fileList: [],
       visibleCount: 10,
       visibleFileList: [],
-      searchResutlList: [],
       listingDir: 0, // 0: 未列目录; 1: 正在列目录; 2: 已列完目录
       filters: {},
       filted: 0,
+      searchValue: '',
       floatMenuOpen: false,
       currentDir: this.targetDir,
       scrollBarOptions: this.$bus.mixinScrollBarOptions({
@@ -170,7 +170,10 @@ export default {
   },
   computed: {
     floatButtonMenuClass () {
-      return 'float-button-menu-box' + (this.floatMenuOpen ? ' float-button-menu-box-opened' : '')
+      return (
+        'float-button-menu-box' +
+        (this.floatMenuOpen ? ' float-button-menu-box-opened' : '')
+      )
     }
   },
 
@@ -193,16 +196,6 @@ export default {
     // 当前文件内容区可视文件数量变更
     visibleCount (visibleCount) {
       this.visibleFileList = this.fileList.slice(0, visibleCount)
-    },
-
-    // 监听总线事件，窗口失去焦点时重置按键状态
-    '$bus.isBlur': {
-      handler: function (val) {
-        if (val) {
-          this.onCtrl = false
-          this.onShift = false
-        }
-      }
     },
 
     filters: {
@@ -241,53 +234,61 @@ export default {
     handleSearchFile (searchOptions) {
       const searchResutlList = []
       const { value } = searchOptions
+      this.searchValue = value
+      let searchMethod
 
       // 大小写不敏感
-      const notCaseSensitive = (file) => {
+      const notCaseSensitive = file => {
         if (file.name.toLowerCase().includes(value.toLowerCase())) return true
       }
 
       // 大小写敏感
-      const caseSensitive = (file) => {
+      const caseSensitive = file => {
         if (file.name.includes(value)) return true
       }
 
       // 全等
-      const congruent = (file) => {
+      const congruent = file => {
         if (file.name === value) return true
       }
 
+      // 全等不敏感
+      const congruentNoCase = file => {
+        if (file.name.toLowerCase() === value.toLowerCase()) return true
+      }
+
       // 正则
-      const regexp = (file) => {
+      const regexp = file => {
         const regexp = new RegExp(value)
         if (file.name.match(regexp)) return true
       }
 
       log(`start to search file [${value}]`)
       const start = Date.now()
+      if (searchOptions.regexp.status) {
+        searchMethod = regexp
+
+        // 全等搜索要避免搜索空字符串（这样将会无结果）
+      } else if (searchOptions.congruent.status && value !== '') {
+        searchMethod = searchOptions.caseSensitive.status
+          ? congruent
+          : congruentNoCase
+      } else {
+        searchMethod = searchOptions.caseSensitive.status
+          ? caseSensitive
+          : notCaseSensitive
+      }
       for (const file of this.fileList) {
-        if (searchOptions.sensitive && notCaseSensitive(file)) {
-          searchResutlList.push(file)
-          continue
-        }
-
-        if (searchOptions.caseSensitive && caseSensitive(file)) {
-          searchResutlList.push(file)
-          continue
-        }
-
-        if (searchOptions.congruent && congruent(file)) {
-          searchResutlList.push(file)
-          continue
-        }
-
-        if (searchOptions.regexp && regexp(file)) {
-          searchResutlList.push(file)
-          continue
-        }
+        if (searchMethod(file)) searchResutlList.push(file)
       }
       this.visibleFileList = searchResutlList
-      log(`search complete, find result: ${searchResutlList.length}`, searchResutlList, `time spent: ${Date.now() - start}ms`)
+      this.$refs.fileListContent.style.minHeight = `${searchResutlList.length * 65}px`
+
+      log(
+        `search complete, find result: ${searchResutlList.length}`,
+        searchResutlList,
+        `time spent: ${Date.now() - start}ms`
+      )
     },
 
     // 浮动按钮单击事件
@@ -306,6 +307,7 @@ export default {
 
     // 滚动时懒加载
     visibleAeraScroll (vertical) {
+      if (this.searchValue) return
       // 滚动累计长度计算
       const scrollLength = vertical.scrollTop - this.lastScrollTop
       this.scrollLength += scrollLength
@@ -437,7 +439,9 @@ export default {
         .chokidarHandler('listDir', { dirPath })
         .then(result => {
           // 由于上述过程完成的结果是通过ipc通信发送的，所以对象的方法将会丢失，因此在这里重建我们File类的方法
-          if (this.selectedFiles.length > 0) { handleHasSelectFiles(result.fileList) } else handleCommon(result.fileList)
+          if (this.selectedFiles.length > 0) {
+            handleHasSelectFiles(result.fileList)
+          } else handleCommon(result.fileList)
 
           // 完成
           this.$emit('folderChanged', {
@@ -533,23 +537,15 @@ export default {
       }
 
       // 按住ctrl进行多选处理
-      if (this.onCtrl) handleMultiple()
+      if (this.$bus.keys.ctrl) handleMultiple()
       else if (!selected) handleSingle()
     },
 
-    // 监听按键按下状态
+    // 局部监听按键按下状态
     watchKeyEvent () {
       const setKeyStatus = (keyCode, status) => {
         switch (keyCode) {
-          case 16: // shift
-            if (this.onShfit === status) return
-            this.onShfit = status
-            break
-          case 17: // ctrl
-            if (this.onCtrl === status) return
-            this.onCtrl = status
-            break
-          case 116: // f5
+          case 116: // 按下f5
             if (status !== true) return
             this.handleRefreshFolder()
             break
@@ -609,9 +605,9 @@ export default {
   overflow: hidden;
   justify-content: center;
   border-radius: 4px;
-  background-color: #FAFAFA;
-  border: 2px solid #7A94FF;
-  transition: .2s ease;
+  background-color: #fafafa;
+  border: 2px solid #7a94ff;
+  transition: 0.2s ease;
 }
 
 .float-button-menu-box-opened {
@@ -648,14 +644,13 @@ export default {
 }
 
 .control-button-disalbed {
-  pointer-events:none;
-  filter: brightness(.9);
-  opacity: .9;
+  pointer-events: none;
+  filter: brightness(0.9);
+  opacity: 0.9;
 }
 
 .control-button-warning {
   background-color: #ffcdd2;
   color: #000000;
 }
-
 </style>

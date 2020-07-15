@@ -49,8 +49,27 @@ export default {
     }
   },
   mounted () {
+    this.listenGlobalKeyEvent()
   },
   methods: {
+    // 全局监听按键按下状态
+    listenGlobalKeyEvent () {
+      const listener = {
+        16: 'shift',
+        17: 'ctrl'
+      }
+      const setKeyStatus = (keyCode, status) => {
+        const keyName = listener[keyCode]
+        // 只监听listener中的按键代码
+        if (!keyName) return
+        const getStatus = () => this.$bus.keys[keyName] === status
+        const setStatus = () => { this.$bus.keys[keyName] = status }
+
+        if (!getStatus()) setStatus()
+      }
+      window.onkeydown = e => setKeyStatus(e.keyCode, true)
+      window.onkeyup = e => setKeyStatus(e.keyCode, false)
+    }
   }
 }
 </script>
