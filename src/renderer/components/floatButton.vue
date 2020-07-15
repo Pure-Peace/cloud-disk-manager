@@ -2,10 +2,20 @@
   <div
     v-drag
     class="float-button-box"
-    :title="title"
-    @click="test"
   >
-    <span :style="floatButtonIconStyle"><svg-icon :icon-class="icon" /></span>
+    <div
+      class="float-button"
+      :title="title"
+      @click="handleClick"
+    >
+      <span :style="floatButtonIconStyle">
+        <svg-icon
+          :class="floatButtonIconClass"
+          :icon-class="menuOpened ? 'button-exit' : icon"
+        />
+      </span>
+    </div>
+    <slot />
   </div>
 </template>
 
@@ -65,6 +75,10 @@ export default {
     title: {
       type: String,
       default: '单击展开菜单，按住可进行拖动'
+    },
+    menuOpened: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -73,12 +87,16 @@ export default {
   computed: {
     floatButtonIconStyle () {
       return `font-size: ${this.size}px;`
+    },
+
+    floatButtonIconClass () {
+      return 'float-button-icon' + (this.menuOpened ? ' float-button-icon-menu-opened' : '')
     }
   },
   methods: {
-    test () {
+    handleClick (e) {
       if (!moving) {
-        console.log(111)
+        this.$emit('click', e)
       }
     }
   }
@@ -93,6 +111,10 @@ export default {
   z-index: 50;
   top: 87%;
   left: 92%;
+}
+
+.float-button {
+  position: relative;
   height: 50px;
   width: 50px;
   border-radius: 50%;
@@ -104,13 +126,22 @@ export default {
   cursor: pointer;
   transition: filter .2s ease;
   box-shadow: 0 4px 2px -2px rgba(128, 128, 128, 0.4);
+
 }
 
-.float-button-box:hover {
+.float-button:hover {
     filter: brightness(1.1);
 }
 
-.float-button-box:active {
+.float-button:active {
     filter: brightness(.9);
+}
+
+.float-button-icon {
+  transition: .4s ease;
+}
+
+.float-button-icon-menu-opened {
+  transform: rotate(90deg);
 }
 </style>

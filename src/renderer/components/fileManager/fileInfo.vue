@@ -3,7 +3,7 @@
     <div style="height: calc(100% - 60px);">
       <vue-scroll :ops="scrollBarOptions">
         <div
-          v-if="!file || view === 'dir'"
+          v-if="view !== 'search' && !file || view === 'dir'"
           class="file-detail-dir-view"
         >
           <div
@@ -22,9 +22,7 @@
           </div>
           <div v-show="file">
             <div class="file-icon-box">
-              <div
-                style="display: flex; width: 90%; justify-content: center;"
-              >
+              <div style="display: flex; width: 90%; justify-content: center;">
                 <svg-icon
                   v-for="(selectedFile, idx) in selectedFiles"
                   :key="`selectedFileInfo${idx}`"
@@ -119,6 +117,24 @@
           :data="file.getInfo(false)"
         />
         <div
+          v-if="view==='search'"
+          class="file-search-panel-box"
+        >
+          <div class="file-detail-name">
+            文件搜索
+          </div>
+          <div style="padding: 20px 0;">
+            <div>
+              <input
+                ref="fileSearchInput"
+                placeholder="输入文件名（支持正则表达式）"
+                class="file-search-input"
+                @keypress.enter="handleSearch"
+              >
+            </div>
+          </div>
+        </div>
+        <div
           v-if="file && view === 'file'"
           class="file-info-head"
         >
@@ -210,6 +226,7 @@
         :key="`controlbtn${idx}`"
       >
         <div
+          :style="item.style || ''"
           :class="controlButtonClass(item)"
           :title="item.title"
           @click="item.handler"
@@ -285,11 +302,12 @@ export default {
           title: '切换到文件高级信息显示',
           view: 'pro',
           label: '高级视图',
-          icon: 'pro-view',
+          icon: 'detail',
           handler: () => {
             this.view = 'pro'
           }
         },
+
         {
           title: '切换到目录视图显示',
           view: 'dir',
@@ -301,12 +319,32 @@ export default {
         },
 
         {
-          title: '将当前项目取消选择（快捷方式：CTRL + 鼠标左键单击列表中已选中的项目）',
+          title: '显示文件搜索面板',
+          view: 'search',
+          label: '搜索文件',
+          icon: 'pro-view',
+          handler: () => {
+            this.view = 'search'
+            this.$nextTick(() => {
+              this.$refs.fileSearchInput.focus()
+            })
+          }
+        },
+
+        {
+          title:
+            '将当前项目取消选择（快捷方式：CTRL + 鼠标左键单击列表中已选中的项目）',
           label: '取消选择',
           icon: 'unselect-file',
           handler: () => this.$emit('unselectFile', this.file)
         }
-      ]
+      ],
+      searchOptions: {
+        notCaseSensitive: false,
+        caseSensitive: false,
+        congruent: false,
+        regexp: false
+      }
     }
   },
   computed: {
@@ -330,7 +368,10 @@ export default {
         return (
           'control-button' +
           (this.view === item.view ? ' control-button-actived' : '') +
-          (!this.file && !item.view ? ' control-button-disalbed' : '')
+          (!this.file && !item.view ? ' control-button-disalbed' : '') +
+          (this.file && item.icon === 'unselect-file'
+            ? ' control-button-warning'
+            : '')
         )
       }
     }
@@ -366,6 +407,12 @@ export default {
     }
   },
   methods: {
+    handleSearch () {
+      this.$nextTick(() => {
+        this.$emit('searchFile', Object.assign(this.searchOptions, { value: this.$refs.fileSearchInput.value }))
+      })
+    },
+
     fileFiltersContextmenu (event) {
       // 菜单项处理函数
       const handleFilter = (handle, status) => {
@@ -485,7 +532,7 @@ export default {
   flex: 1;
   position: relative;
   border-left: 1px dashed #d5d8e3;
-  min-width: 260px;
+  min-width: 280px;
 }
 
 .file-detail-content {
@@ -568,7 +615,7 @@ export default {
   border-radius: 4px;
   transition: 0.2s ease;
   margin-right: 10px;
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
   color: @primary;
 }
@@ -587,8 +634,14 @@ export default {
 }
 
 .control-button-disalbed {
-  pointer-events:none;
-  filter: brightness(.95);
+  pointer-events: none;
+  filter: brightness(0.9);
+  opacity: 0.9;
+}
+
+.control-button-warning {
+  background-color: #ffcdd2;
+  color: #000000;
 }
 
 .file-detail-dir-view {
@@ -653,7 +706,29 @@ export default {
   width: 100%;
   align-items: center;
   justify-content: center;
-  background-color: #FAFAFA;
+  background-color: #fafafa;
   border-top: 1px dashed #d5d8e3;
+}
+
+.file-search-panel-box {
+  padding: 10px;
+}
+
+.file-search-input {
+  transition: 0.2s ease;
+  width: 100%;
+  outline: none;
+  height: 40px;
+  background: #F1F1F1;
+  border: 2px solid #F1F1F1;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.file-search-input:hover {
+  border-color: #7A94FF;
+}
+.file-search-input:focus {
+  border-color: #7A94FF;
 }
 </style>

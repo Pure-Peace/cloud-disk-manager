@@ -57,8 +57,45 @@
       :selected-files="selectedFiles"
       @filterChange="(changedFilters)=>{filters = changedFilters}"
       @unselectFile="file => handleSelectFile(file, 'unselect')"
+      @searchFile="(searchOptions)=>handleSearchFile(searchOptions)"
     />
-    <float-button />
+    <float-button
+      :menu-opened="floatMenuOpen"
+      @click="handleFloatButtonClick"
+    >
+      <div :class="floatButtonMenuClass">
+        <div class="control-button">
+          <span>文件搜索</span>
+          <span style="padding: 0 5px;">
+            <svg-icon icon-class="pro-view" />
+          </span>
+        </div>
+        <div class="control-button">
+          <span>名称排序</span>
+          <span style="padding: 0 5px;">
+            <svg-icon icon-class="pro-view" />
+          </span>
+        </div>
+        <div class="control-button">
+          <span>名称排序</span>
+          <span style="padding: 0 5px;">
+            <svg-icon icon-class="pro-view" />
+          </span>
+        </div>
+        <div class="control-button">
+          <span>创建时间排序</span>
+          <span style="padding: 0 5px;">
+            <svg-icon icon-class="pro-view" />
+          </span>
+        </div>
+        <div class="control-button">
+          <span>修改时间排序</span>
+          <span style="padding: 0 5px;">
+            <svg-icon icon-class="pro-view" />
+          </span>
+        </div>
+      </div>
+    </float-button>
   </div>
 </template>
 
@@ -106,9 +143,11 @@ export default {
       fileList: [],
       visibleCount: 10,
       visibleFileList: [],
+      searchResutlList: [],
       listingDir: 0, // 0: 未列目录; 1: 正在列目录; 2: 已列完目录
       filters: {},
       filted: 0,
+      floatMenuOpen: false,
       currentDir: this.targetDir,
       scrollBarOptions: this.$bus.mixinScrollBarOptions({
         vuescroll: {
@@ -127,6 +166,11 @@ export default {
       }),
       lastScrollTop: 0,
       scrollLength: 0
+    }
+  },
+  computed: {
+    floatButtonMenuClass () {
+      return 'float-button-menu-box' + (this.floatMenuOpen ? ' float-button-menu-box-opened' : '')
     }
   },
 
@@ -194,6 +238,63 @@ export default {
     this.initialCurrentDir()
   },
   methods: {
+    handleSearchFile (searchOptions) {
+      const searchResutlList = []
+      const { value } = searchOptions
+
+      // 大小写不敏感
+      const notCaseSensitive = (file) => {
+        if (file.name.toLowerCase().includes(value.toLowerCase())) return true
+      }
+
+      // 大小写敏感
+      const caseSensitive = (file) => {
+        if (file.name.includes(value)) return true
+      }
+
+      // 全等
+      const congruent = (file) => {
+        if (file.name === value) return true
+      }
+
+      // 正则
+      const regexp = (file) => {
+        const regexp = new RegExp(value)
+        if (file.name.match(regexp)) return true
+      }
+
+      log(`start to search file [${value}]`)
+      const start = Date.now()
+      for (const file of this.fileList) {
+        if (searchOptions.sensitive && notCaseSensitive(file)) {
+          searchResutlList.push(file)
+          continue
+        }
+
+        if (searchOptions.caseSensitive && caseSensitive(file)) {
+          searchResutlList.push(file)
+          continue
+        }
+
+        if (searchOptions.congruent && congruent(file)) {
+          searchResutlList.push(file)
+          continue
+        }
+
+        if (searchOptions.regexp && regexp(file)) {
+          searchResutlList.push(file)
+          continue
+        }
+      }
+      this.visibleFileList = searchResutlList
+      log(`search complete, find result: ${searchResutlList.length}`, searchResutlList, `time spent: ${Date.now() - start}ms`)
+    },
+
+    // 浮动按钮单击事件
+    handleFloatButtonClick () {
+      this.floatMenuOpen = !this.floatMenuOpen
+    },
+
     // 当1屏的大小发生变化时，重新计算1屏的可视数据量
     visibleAeraResize () {
       const resizedVisibleCount =
@@ -295,21 +396,27 @@ export default {
       const start = Date.now()
 
       // 如果之前选择过的文件没有发生改变，将重建File对象，并保留之前的选择
-      const handleHasSelectFiles = (fileList) => {
+      const handleHasSelectFiles = fileList => {
         let tempSelectedFile = null
         const tempSelectedFiles = []
         const selectedFile = this.selectedFile
         const selectedFiles = this.selectedFiles
 
-        this.fileList = fileList.map((fileInfo) => {
+        this.fileList = fileList.map(fileInfo => {
           const file = new File(fileInfo)
-          const selectedIdx = selectedFiles.findIndex(selectedFile => selectedFile.ino === file.ino)
+          const selectedIdx = selectedFiles.findIndex(
+            selectedFile => selectedFile.ino === file.ino
+          )
           if (selectedIdx !== -1) {
             file.selected = true
             tempSelectedFiles.push(file)
           }
 
-          if (!tempSelectedFile && selectedFile && selectedFile.ino === file.ino) {
+          if (
+            !tempSelectedFile &&
+            selectedFile &&
+            selectedFile.ino === file.ino
+          ) {
             file.selected = true
             tempSelectedFile = file
           }
@@ -320,27 +427,36 @@ export default {
       }
 
       // 一般处理，仅重建File对象
-      const handleCommon = (fileList) => {
-        this.fileList = fileList.map((fileInfo) => new File(fileInfo))
+      const handleCommon = fileList => {
+        this.fileList = fileList.map(fileInfo => new File(fileInfo))
       }
 
       // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
       // 由于这是通过子服务chokidarService进行处理的，所以实际上当前进程只需要等待结果即可
-      this.$bus.chokidarHandler('listDir', { dirPath }).then(result => {
-        // 由于上述过程完成的结果是通过ipc通信发送的，所以对象的方法将会丢失，因此在这里重建我们File类的方法
-        if (this.selectedFiles.length > 0) handleHasSelectFiles(result.fileList)
-        else handleCommon(result.fileList)
+      this.$bus
+        .chokidarHandler('listDir', { dirPath })
+        .then(result => {
+          // 由于上述过程完成的结果是通过ipc通信发送的，所以对象的方法将会丢失，因此在这里重建我们File类的方法
+          if (this.selectedFiles.length > 0) { handleHasSelectFiles(result.fileList) } else handleCommon(result.fileList)
 
-        // 完成
-        this.$emit('folderChanged', { dir: this.currentDir, fileList: this.fileList })
-        this.listingDir = 2
+          // 完成
+          this.$emit('folderChanged', {
+            dir: this.currentDir,
+            fileList: this.fileList
+          })
+          this.listingDir = 2
 
-        log(`directory listing completed. file total: ${this.fileList.length}, time spent: ${Date.now() - start}ms`)
-      }).catch(err => {
-        log(`failed when listing directory [${dirPath}]`)
-        this.listingDir = 2
-        throw new Error(err)
-      })
+          log(
+            `directory listing completed. file total: ${
+              this.fileList.length
+            }, time spent: ${Date.now() - start}ms`
+          )
+        })
+        .catch(err => {
+          log(`failed when listing directory [${dirPath}]`)
+          this.listingDir = 2
+          throw new Error(err)
+        })
     },
 
     // 选择文件处理
@@ -369,7 +485,9 @@ export default {
         // 如果取消的是当前正在展示信息的文件，则切换到其它文件的信息展示
         if (this.selectedFile === file) {
           const before = currentFileIndex - 1
-          this.selectedFile = this.selectedFiles[before >= 0 ? before : this.selectedFiles.length - 1]
+          this.selectedFile = this.selectedFiles[
+            before >= 0 ? before : this.selectedFiles.length - 1
+          ]
         }
         this.$emit('fileUnselected', file)
         log(file, file.name, 'unselected')
@@ -445,6 +563,8 @@ export default {
 </script>
 
 <style lang="less" scoped>
+@import "../../themes/light.less";
+
 .file-list-box {
   overflow: hidden;
   display: flex;
@@ -475,4 +595,67 @@ export default {
 .file-list-content {
   background-color: transparent;
 }
+
+.float-button-menu-box {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  z-index: -1;
+  bottom: 25px;
+  right: 25px;
+  height: 0px;
+  opacity: 0;
+  width: 0px;
+  overflow: hidden;
+  justify-content: center;
+  border-radius: 4px;
+  background-color: #FAFAFA;
+  border: 2px solid #7A94FF;
+  transition: .2s ease;
+}
+
+.float-button-menu-box-opened {
+  height: 60px;
+  opacity: 1;
+  width: 600px;
+  padding: 10px;
+  display: flex;
+}
+
+.control-button {
+  white-space: nowrap;
+  background-color: #f1f2f6;
+  padding: 5px 8px;
+  border-radius: 4px;
+  transition: 0.2s ease;
+  margin-right: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  color: @primary;
+}
+
+.control-button:hover {
+  filter: brightness(0.9);
+}
+
+.control-button:active {
+  filter: brightness(0.8);
+}
+
+.control-button-actived {
+  color: @white;
+  background-color: @primary;
+}
+
+.control-button-disalbed {
+  pointer-events:none;
+  filter: brightness(.9);
+  opacity: .9;
+}
+
+.control-button-warning {
+  background-color: #ffcdd2;
+  color: #000000;
+}
+
 </style>
