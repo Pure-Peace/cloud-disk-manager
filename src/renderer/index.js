@@ -29,6 +29,7 @@ const subservices = {
   Chokidar
 }
 
+// 初始化子服务方法
 function initSubService () {
   try {
     const vueComponent = subservices[params.service]
@@ -43,6 +44,7 @@ function initSubService () {
   }
 }
 
+// 初始化app方法
 function initApp () {
   const option = {
     router,
@@ -53,17 +55,23 @@ function initApp () {
   new Vue(option).$mount('#app')
 }
 
-Vue.prototype.$electron = require('electron')
+// 优先加载
 Vue.config.productionTip = false
+Vue.prototype.$electron = require('electron')
+
+// use components ------
 Vue.use(VModal)
 Vue.use(vuescroll)
 Vue.use(VueBus, { router })
 Vue.use(Contextmenu)
 Vue.component('svg-icon', SvgIcon)
+
+// prototype ------
 Vue.prototype.$backend = backend
 Vue.prototype.$iconList = iconList
 Vue.prototype.$moment = moment
 Vue.prototype.$md5 = md5
 
+// 根据url解码数据来判断初始化对象是子服务还是app
 const params = utils.parseUrlSearch(window.location.search)
 params && params.subservice ? initSubService() : initApp()

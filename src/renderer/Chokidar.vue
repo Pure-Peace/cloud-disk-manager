@@ -16,6 +16,7 @@
 </template>
 
 <script>
+// chokidar子服务，基本功能：监测文件修改、列目录、获取文件信息
 import File from 'components/fileManager/file.js'
 
 const chokidar = require('chokidar')
@@ -35,9 +36,30 @@ export default {
       totalError: 0,
       eventTrigged: 0,
       watchedFiles: 0,
+      // 已连接的客户端，每个客户端的watcher独立
       clients: {},
+      // handlers是面向客户端的处理器
       handlers: [
+        // 非客户端事件处理 ------------------------------
         {
+          // 列目录
+          event: 'listDir',
+          handler: async (e, arg) => {
+            const dirPath = arg.dirPath
+            const initialFile = (path) => new File(path)
+            // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
+            const fileList = await Promise.all(
+              fs.readdirSync(dirPath).map(
+                async (fileName) => await initialFile(PATH.join(dirPath, fileName))
+              )
+            )
+            // 发送结果，此处基于发送过来的事件eventId（一个md5）进行回复，而非基于客户端
+            e.echo(arg.eventId, { fileList })
+          }
+        },
+        // 基于客户端的事件处理 ------------------------------
+        {
+          // 向客户端发送当前状态
           event: 'status',
           echoEvent: 'status',
           handler: (e, arg) => {
@@ -55,11 +77,14 @@ export default {
           }
         },
         {
+          // 初始化watcher
           event: 'initWatcher',
           echoEvents: ['watcherInitialing', 'watcherReady', 'watcherError', 'initialerror'],
           handler: (e, arg) => {
             try {
               const events = arg.events || []
+
+              // watcher，遍历深度depth默认为0（当前目录，不往下遍历）
               const watcher = chokidar.watch(arg.target, arg.options || { depth: 0 })
                 .on('ready', () => {
                   e.setClient('ready', true)
@@ -71,6 +96,7 @@ export default {
                   e.echo('watcherError', err)
                 })
 
+              // 添加要watch的event
               events.forEach(event => {
                 watcher.on(event, (...args) => {
                   this.eventTrigged += 1
@@ -78,6 +104,7 @@ export default {
                 })
               })
 
+              // 保存watcher
               e.setClient('target', arg.target)
               e.setClient('ready', false)
               e.setClient('watcher', watcher)
@@ -89,20 +116,7 @@ export default {
           }
         },
         {
-          event: 'listDir',
-          handler: async (e, arg) => {
-            const dirPath = arg.dirPath
-            const initialFile = (path) => new File(path)
-            // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
-            const fileList = await Promise.all(
-              fs.readdirSync(dirPath).map(
-                async (fileName) => await initialFile(PATH.join(dirPath, fileName))
-              )
-            )
-            e.echo(arg.eventId, { fileList })
-          }
-        },
-        {
+          // 关闭watcher
           event: 'closeWatcher',
           echoEvents: ['watcherClosing', 'watcherClosed'],
           handler: (e, arg) => {
@@ -118,6 +132,7 @@ export default {
           }
         },
         {
+          // 取消对某文件或目录的watch
           event: 'unwatch',
           echoEvents: ['unwatching', 'unwatched'],
           handler: (e, arg) => {
@@ -128,6 +143,7 @@ export default {
           }
         },
         {
+          // 对watcher添加要watch的事件
           event: 'addEvent',
           echoEvent: 'eventAdded',
           handler: (e, arg) => {
@@ -139,6 +155,7 @@ export default {
           }
         },
         {
+          // 对watcher添加要watch的文件
           event: 'addWatch',
           echoEvent: 'watchAdded',
           handler: (e, arg) => {
@@ -147,6 +164,7 @@ export default {
           }
         },
         {
+          // 获取已watch的文件
           event: 'getWatched',
           echoEvent: 'hasWatched',
           handler: (e, arg) => {
@@ -157,6 +175,7 @@ export default {
     }
   },
   computed: {
+    // 运行状态文字的颜色
     statusColor () {
       return `color: ${this.status === 'RUNNING' ? 'green' : 'red'};`
     }
@@ -165,6 +184,7 @@ export default {
     this.initService()
   },
   methods: {
+    // 设置保存的客户端数据
     setClient (id, key, value) {
       if (!this.clients[id]) {
         log(`create client ${id}`)
@@ -173,6 +193,8 @@ export default {
 
       this.clients[id][key] = value
     },
+
+    // 向客户端发送信息（ipcrenderer)
     sendTo (id, channel, data = 'recived') {
       // channel = this.serviceName + channel
       try {
@@ -184,6 +206,8 @@ export default {
         throw new Error(e)
       }
     },
+
+    // 添加ipc事件监听
     addEvent (event, handler) {
       try {
         this.$electron.ipcRenderer.removeAllListeners(event)
@@ -194,9 +218,12 @@ export default {
         throw new Error(e)
       }
     },
+
+    // 初始化所有eventHandlers
     initEvents () {
       this.handlers.forEach(item => this.addEvent(
 
+        // 当event触发
         item.event, (e, arg) => {
           this.totalRecived += 1
           const id = e.senderId
@@ -204,14 +231,15 @@ export default {
           if (!this.clients[id]) this.clients[id] = { watcher: null, ready: false }
           const that = this
 
+          // 调用与event对应的handler处理
           try {
             item.handler({
-              echo: (channel, data) => { this.sendTo(id, channel, data) },
-              setClient: (key, value) => { this.setClient(id, key, value) },
-              clearClient: () => { this.clients[id] = {} },
-              get client () { return that.clients[id] },
-              get watcher () { return that.clients[id].watcher },
-              senderId: id
+              echo: (channel, data) => { this.sendTo(id, channel, data) }, // 闭包函数，用于对发送消息的客户端进行回复
+              setClient: (key, value) => { this.setClient(id, key, value) }, // 闭包函数，用于对发送消息的客户端状态进行设置
+              clearClient: () => { this.clients[id] = {} }, // 闭包函数，清除发送消息的客户端
+              get client () { return that.clients[id] }, // 发送消息的客户端
+              get watcher () { return that.clients[id].watcher }, // 此客户端对应的watcher
+              senderId: id // 客户端的窗口（webContents）id
             }, arg)
           } catch (e) {
             this.totalError += 1
@@ -220,6 +248,7 @@ export default {
         })
       )
     },
+    // 初始化一切！
     initService () {
       log('-----chokidar service-----')
       log('initial chokidar service...')

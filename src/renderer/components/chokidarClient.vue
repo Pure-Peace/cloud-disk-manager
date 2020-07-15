@@ -3,6 +3,8 @@
 </template>
 
 <script>
+// chokidar客户端，我写了一些api的示例备忘（其实真的会忘记）
+
 const log = console.log
 
 export default {
@@ -20,6 +22,7 @@ export default {
         cantUseTipShowed: false,
         callbacks: [
           {
+            // 获取chokidar服务状态
             event: 'status',
             handler: data => {
               try {
@@ -34,6 +37,7 @@ export default {
             }
           },
           {
+            // chokidar初始化错误
             event: 'initialerror',
             handler: err => {
               console.error(err)
@@ -41,6 +45,7 @@ export default {
             }
           },
           {
+            // 初始化chokidar的文件watcher
             event: 'watcherInitialing',
             handler: (...args) => {
               this.chokidar.initialing = true
@@ -48,6 +53,7 @@ export default {
             }
           },
           {
+            // watcher就绪，文件监控可用
             event: 'watcherReady',
             handler: (...args) => {
               this.chokidar.initialing = false
@@ -56,6 +62,7 @@ export default {
             }
           },
           {
+            // watcher错误，比如无权限去观察的文件
             event: 'watcherError',
             handler: (...args) => {
               console.error(args)
@@ -63,12 +70,14 @@ export default {
             }
           },
           {
+            // 开始关闭watcher（如果已观察文件数量较多，关闭会花费比较多时间）
             event: 'watcherClosing',
             handler: (...args) => {
               console.log(args)
             }
           },
           {
+            // watcher已经关闭
             event: 'watcherClosed',
             handler: (...args) => {
               this.chokidar.closing = false
@@ -81,6 +90,7 @@ export default {
             }
           },
           {
+            // watcher已添加事件
             event: 'eventAdded',
             handler: (...args) => {
               console.log(args)
@@ -88,6 +98,7 @@ export default {
             }
           },
           {
+            // watcher已添加文件观察
             event: 'watchAdded',
             handler: (...args) => {
               console.log(args)
@@ -96,6 +107,7 @@ export default {
             }
           },
           {
+            // watcher已经观察
             event: 'hasWatched',
             handler: (...args) => {
               console.log(args)
@@ -114,6 +126,7 @@ export default {
     this.initWatcher()
   },
   methods: {
+    // 初始化watcher
     initWatcher (
       data = { events: ['all'], target: this.currentDir, options: undefined }
     ) {
@@ -128,6 +141,7 @@ export default {
         this.chokidar.send('initWatcher', data)
       }
     },
+    // 关闭watcher
     closeWatcher () {
       if (!this.chokidar.closing) {
         this.chokidar.closing = true
@@ -136,6 +150,7 @@ export default {
         }, 500)
       }
     },
+    // 连接到chokidar服务
     connectChokidar () {
       if (!this.chokidar.connected) {
         log('try to connect chokidar service...')
@@ -163,10 +178,13 @@ export default {
         }
       }
     },
+
+    // 获取chokidar状态
     getChokidarStatus () {
       this.chokidar.send('status')
     },
 
+    // 添加ipcrender事件
     addEvent (event, handler) {
       try {
         this.$electron.ipcRenderer.removeAllListeners(event)
@@ -176,6 +194,8 @@ export default {
         throw new Error(e)
       }
     },
+
+    // 初始化所有事件
     initChokidarEvents () {
       const channel = event => this.chokidar.serviceName + event
       this.chokidar.callbacks.forEach(item =>
@@ -195,6 +215,8 @@ export default {
         })
       )
     },
+
+    // 无法使用chokidar
     cantUseChokidar (err = '') {
       this.chokidar.connected = false
       this.chokidar.initialing = false

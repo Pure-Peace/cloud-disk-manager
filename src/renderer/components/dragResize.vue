@@ -20,6 +20,7 @@ export default {
   },
 
   methods: {
+    // 拖动改变大小
     dragResize (e) {
       const clearEvents = e => {
         document.onmouseup = undefined

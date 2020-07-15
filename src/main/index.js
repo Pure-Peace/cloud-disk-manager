@@ -10,4 +10,5 @@ import AppManager from './managers/appManager'
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }])
 
+// 可通过electron remote从渲染进程获取到global.appManager
 global.appManager = new AppManager()

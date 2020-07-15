@@ -94,7 +94,7 @@
                 v-for="(fileFilter, ext) in fileTypeFilters"
                 :key="ext + 'filter'"
                 :class="fileTypeFilterButtonClass(fileFilter.status)"
-                :title="fileTypeFilterTitleClass(fileFilter, ext)"
+                :title="fileTypeFilterTitle(fileFilter, ext)"
                 @click="fileFilter.status = !fileFilter.status"
               >
                 <span class="file-filter-ext">{{ ext === ':directory:' ? '目录' : ext || '无扩展名' }}</span>

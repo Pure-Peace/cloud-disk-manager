@@ -265,9 +265,9 @@ export default {
 
       log(`start to search file [${value}]`)
       const start = Date.now()
+      // 按照options选择搜索方法
       if (searchOptions.regexp.status) {
         searchMethod = regexp
-
         // 全等搜索要避免搜索空字符串（这样将会无结果）
       } else if (searchOptions.congruent.status && value !== '') {
         searchMethod = searchOptions.caseSensitive.status
@@ -278,6 +278,8 @@ export default {
           ? caseSensitive
           : notCaseSensitive
       }
+
+      // 搜索
       for (const file of this.fileList) {
         if (searchMethod(file)) searchResutlList.push(file)
       }

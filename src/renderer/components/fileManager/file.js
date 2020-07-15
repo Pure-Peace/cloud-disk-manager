@@ -22,6 +22,7 @@ export default class File {
       this.mime = mime.getType(this.ext)
 
       try {
+        // 获取文件stats，若无足够权限则会抛错
         const stats = fs.statSync(path)
         Object.assign(this, stats)
 
@@ -35,12 +36,14 @@ export default class File {
         this.isCharacterDevice = stats.isCharacterDevice()
         this.initialed = true
       } catch (err) {
+        // 一般就是权限不足，无法获取stats
         this.note = '权限不足'
         log(`failed when stat file: ${path},`, new Error(err))
       }
     }
   }
 
+  // 文件类型字符串，用于信息展示
   get type () {
     if (this.isFile) return this.ext === 'lnk' ? '快捷方式' : '文件'
     if (this.isDir) return '目录'
@@ -51,6 +54,7 @@ export default class File {
     return '未知类型'
   }
 
+  // 按文件类型获取图标
   get iconClass () {
     const tryIcon = (fileType) => {
       const tryName = fileType
@@ -65,10 +69,12 @@ export default class File {
     return this.sizeFormat(this.size)
   }
 
+  // 时间类型
   get timeTypes () {
     return ['atime', 'ctime', 'mtime', 'birthtime']
   }
 
+  // 时间类型简单解释
   timeTypeFormatted (timeType) {
     const dict = {
       atime: '最后访问',
@@ -79,6 +85,7 @@ export default class File {
     return dict[timeType]
   }
 
+  // 格式化指定类型的时间
   timeFormatted (timeType) {
     if (!this.timeTypes.includes(timeType)) throw new Error('invalid time type')
     return this.timeFormat(this[timeType])
@@ -101,6 +108,7 @@ export default class File {
     return moment(time).format('YYYY-MM-DD HH:mm:ss')
   }
 
+  // 文件转json格式信息输出
   getInfo (json = true) {
     const { initialed, selected, ...info } = this
 

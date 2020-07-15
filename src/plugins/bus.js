@@ -1,3 +1,5 @@
+// 总线
+
 import moment from 'moment'
 const path = require('path')
 const {
@@ -10,17 +12,19 @@ const install = (Vue, options) => {
       return {
         process,
         clipboard, // electron clipboard object
-        keys: {},
-        sep: path.sep,
+        keys: {}, // 保存全局按键状态
+        sep: path.sep, // 分隔符
         set: Vue.set,
-        isFocus: false,
-        isBlur: false,
+        isFocus: false, // 窗口状态
+        isBlur: false, // 窗口状态
+        //
         getWindow: Function,
-        getSubService: Function,
+        getSubService: Function, // 子服务获取
         appManager: Object,
         dialog: Function, // electron dialog
         electronId: Number, // electron id
         win: Object, // this electron window
+        //
         router: options.router,
         appName: 'Cloud Disk Manager',
         topbarHeight: 70,
@@ -68,6 +72,7 @@ const install = (Vue, options) => {
           title: '百度网盘'
         }
         ],
+        // 虚拟滚动条默认设置
         scrollBarOptions: () => {
           return {
             vuescroll: {
@@ -104,6 +109,7 @@ const install = (Vue, options) => {
       this.eventsInitial()
     },
     methods: {
+      // 初始化mainprocess的相关方法及变量
       objectsInitial () {
         const appManager = this.getAppManager()
         this.appManager = appManager
@@ -113,6 +119,7 @@ const install = (Vue, options) => {
         this.electronId = this.win.id
         this.dialog = this.$electron.remote.dialog
       },
+      // electron窗口事件
       eventsInitial () {
         this.win.on('blur', () => {
           this.isBlur = true
@@ -152,6 +159,7 @@ const install = (Vue, options) => {
           })
         })
       },
+      // 用于格式化文件大小
       sizeFormat (size, units, digits = 2) {
         /**
          * @param {Number} size
@@ -165,6 +173,7 @@ const install = (Vue, options) => {
         }
         return (unit === 'B' ? size : size.toFixed(!digits ? 2 : digits)) + ' ' + unit
       },
+      // 用于时间格式化
       timeFormat (time) {
         return moment(time).format('YYYY-MM-DD HH:mm:ss')
       },
@@ -174,16 +183,22 @@ const install = (Vue, options) => {
       appGetPath (pathName = 'desktop') {
         return this.$electron.remote.app.getPath(pathName)
       },
+
+      // 渲染进程模态对话框
       modal (item) {
         this.$modal.show('global-modal', {
           type: item.modalType
         })
       },
+
+      // router
       changePage (item) {
         this.router.push({
           name: item.name
         })
       },
+
+      // ---
       emit (event, ...args) {
         this.$emit(event, ...args)
       },
@@ -193,6 +208,8 @@ const install = (Vue, options) => {
       off (event, callback) {
         this.$off(event, callback)
       },
+
+      // 修改默认的虚拟滚动条设置（新设置混入默认设置）
       mixinScrollBarOptions (options) {
         options = options || {}
         const options2 = this.scrollBarOptions()

@@ -74,6 +74,7 @@ export default {
     }
   },
   watch: {
+    // 目录改变则及时记录历史
     dir (currentDir, beforeDir) {
       this.historysHandler(currentDir, beforeDir)
     }
