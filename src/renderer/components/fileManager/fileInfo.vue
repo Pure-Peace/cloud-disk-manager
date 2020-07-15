@@ -706,8 +706,9 @@ export default {
 .file-detail-box {
   flex: 1;
   position: relative;
-  border-left: 1px dashed #d5d8e3;
+  //border-left: 1px dashed #d5d8e3;
   min-width: 300px;
+  box-shadow: 0 0px 4px rgba(55, 55, 77, 0.1);
 }
 
 .file-detail-content {

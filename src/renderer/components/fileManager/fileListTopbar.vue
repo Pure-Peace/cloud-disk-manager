@@ -124,16 +124,19 @@ export default {
 <style lang="less" scoped>
 @import "../../themes/light.less";
 .folder-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   white-space: nowrap;
+  padding: 0 10px;
   background-color: #f1f2f6;
-  padding: 5px 8px;
   border-radius: 4px;
   transition: 0.2s ease;
-  font-size: 12px;
-  margin-left: 10px;
+  font-size: 13px;
+  margin-left: 8px;
   cursor: pointer;
-  min-height: 26px;
-  color: @primary;
+  height: 36px;
+  color: #283593;
 }
 
 .folder-button:hover {
@@ -152,12 +155,12 @@ export default {
   padding: 0 5px;
   display: flex;
   align-items: center;
-  border-bottom: 1px dashed #d5d8e3;
-  height: 55px;
-  min-height: 55px;
+  //border-bottom: 1px dashed #d5d8e3;
+  height: 60px;
+  min-height: 60px;
   font-size: 12px;
   color: #616161;
-  //box-shadow: 0 0px 4px rgba(55, 55, 77, 0.1);
+  box-shadow: 0 0px 4px rgba(55, 55, 77, 0.1);
 }
 
 .rorate-animate {

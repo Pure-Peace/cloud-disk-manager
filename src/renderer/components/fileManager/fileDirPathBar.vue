@@ -1,6 +1,6 @@
 <template>
   <div
-    class="file-currentdir"
+    class="file-dir-path-bar"
     :title="'当前目录：' + dir"
     @contextmenu.prevent="dirPathBarShowContextMenu"
   >
@@ -109,16 +109,19 @@ export default {
 </script>
 
 <style scoped>
-.file-currentdir {
+.file-dir-path-bar {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   margin-left: 8px;
-  padding: 5px 15px;
+  padding: 0 15px;
+  height: 36px;
   border-radius: 4px;
+  color: #283593;
   background-color: #f1f2f6;
   display: flex;
-  align-content: center;
+  align-items: center;
+  font-size: 13px;
 }
 
 .file-sep {

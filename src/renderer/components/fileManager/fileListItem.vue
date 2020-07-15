@@ -12,13 +12,40 @@
         :icon-class="file.iconClass"
       />
     </div>
-    <div class="file-self-box">
-      <div class="file-name">
-        {{ file.name }}
+    <div style="display: flex; justify-content: space-between; width: calc(100% - 48px);">
+      <div
+        class="file-self-box"
+        style="width: calc(100% - 280px);"
+      >
+        <div class="file-name">
+          {{ file.name }}
+        </div>
+        <div class="file-info-box">
+          <div class="file-info">
+            <span>类型:</span>
+            <span style="color: #000000;">{{ file.type }}</span>
+          </div>
+        </div>
       </div>
-      <div class="file-info-box">
+      <div
+        class="file-self-box"
+        style="display: flex; flex-direction: column; justify-content: space-between; min-width: 230px;"
+      >
         <div class="file-info">
-          {{ file.type }}
+          <span>大小:</span>
+          <span style="color: #000000; margin-left: 8px;">{{ file.sizeFormatted }}</span>
+        </div>
+
+        <div class="file-info">
+          <span>修改时间:</span>
+          <span style="color: #000000; margin-left: 8px;">{{ file.timeFormatted('ctime') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!--div class="file-info-box">
+        <div class="file-info">
+          类型: {{ file.type }}
         </div>
         <div
           v-if="file.initialed"
@@ -44,8 +71,7 @@
         >
           未计算
         </div>
-      </div>
-    </div>
+      </div-->
   </div>
 </template>
 
@@ -178,10 +204,12 @@ export default {
   white-space: nowrap;
   text-overflow: ellipsis;
   cursor: pointer;
-  padding: 6px 10px;
+  padding: 0 10px;
   align-items: center;
-  border-bottom: 1px dashed #f1f2f6;
-  height: 65px;
+  border-right: 1px solid rgba(255, 255, 255, 0);
+  border-left: 1px solid rgba(255, 255, 255, 0);
+  border-bottom: 1px solid rgba(210, 214, 241, .6);
+  height: 70px;
 }
 
 .file-item:hover {
@@ -193,6 +221,7 @@ export default {
   min-width: 2rem;
   height: 2rem;
   width: 2rem;
+  margin: 0 10px;
 }
 
 .file-icon {
@@ -201,9 +230,13 @@ export default {
 }
 
 .file-name {
-  font-size: 13px;
+  font-size: 14px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-family: "Segoe WPC", "Segoe UI", "Microsoft YaHei", sans-serif;
   line-height: 22px;
+  color: #000000;
   padding: 0 5px;
 }
 
@@ -212,17 +245,19 @@ export default {
 }
 
 .file-info-box {
-  padding: 4px 4px 0 4px;
+  padding: 0 4px;
   display: flex;
+  display: flex;
+  align-items: center;
 
   :not(:first-child) {
-    margin-left: 10px;
+    margin-left: 8px;
   }
 }
 
 .file-info {
   display: flex;
-  //color: @white;
+  color: #545454;
   //background-color: @primary;
   font-size: 12px;
   padding: 2px 0;
@@ -241,5 +276,7 @@ export default {
 .file-selected {
   color: #000000 !important;
   background-color: #EDF0FF !important;
+  border-left: 1px solid rgba(210, 214, 241, .6);
+  border-right: 1px solid rgba(210, 214, 241, .6);
 }
 </style>

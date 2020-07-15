@@ -158,6 +158,7 @@ export default {
       filters: {},
       searchOptions: {},
       filted: 0,
+      fileItemHeight: 70,
       searchValue: '',
       floatMenuOpen: false,
       currentDir: this.targetDir,
@@ -202,7 +203,7 @@ export default {
       if (!this.searchValue) {
         // 将文件内容区的最小高度设置为数据完全加载后的高度
         // 由于实际上列表数据是懒加载的，这样做可以使得滚动条的比例完整，让人一眼看不出来是懒加载
-        this.$refs.fileListContent.style.minHeight = `${this.fileList.length * 65}px`
+        this.$refs.fileListContent.style.minHeight = `${this.fileList.length * this.fileItemHeight}px`
         this.visibleFileList = this.fileList.slice(0, this.visibleCount)
       } else {
         this.handleSearchFile(Object.assign({ value: this.searchValue }, this.searchOptions))
@@ -230,7 +231,7 @@ export default {
         }
         // 重新计算列表滚动高度
         const length = this.searchValue ? this.visibleFileList.length : this.fileList.length
-        this.$refs.fileListContent.style.minHeight = `${(length - filtedCount) * 65}px`
+        this.$refs.fileListContent.style.minHeight = `${(length - filtedCount) * this.fileItemHeight}px`
       }
     }
   },
@@ -239,7 +240,7 @@ export default {
     this.$nextTick(() => {
       // 初始加载2屏的数据
       this.visibleCount =
-        Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
+        Math.round(this.$refs.vueScroll.$el.clientHeight / this.fileItemHeight) * 2
     })
   },
   created () {
@@ -312,7 +313,7 @@ export default {
         if (searchMethod(file)) searchResutlList.push(file)
       }
       this.visibleFileList = searchResutlList
-      this.$refs.fileListContent.style.minHeight = `${searchResutlList.length * 65}px`
+      this.$refs.fileListContent.style.minHeight = `${searchResutlList.length * this.fileItemHeight}px`
 
       log(
         `search complete, find result: ${searchResutlList.length}`,
@@ -329,7 +330,7 @@ export default {
     // 当1屏的大小发生变化时，重新计算1屏的可视数据量
     visibleAeraResize () {
       const resizedVisibleCount =
-        Math.round(this.$refs.vueScroll.$el.clientHeight / 65) * 2
+        Math.round(this.$refs.vueScroll.$el.clientHeight / this.fileItemHeight) * 2
       if (this.visibleCount < resizedVisibleCount) {
         this.visibleCount = resizedVisibleCount
       }
@@ -351,8 +352,8 @@ export default {
         this.scrollLength -= this.$refs.vueScroll.$el.clientHeight
         // 加载1屏的数据，并附加过度滚动补偿数据
         this.visibleCount +=
-          Math.round(this.$refs.vueScroll.$el.clientHeight / 65) +
-          Math.round(this.scrollLength / 65)
+          Math.round(this.$refs.vueScroll.$el.clientHeight / this.fileItemHeight) +
+          Math.round(this.scrollLength / this.fileItemHeight)
       }
     },
 
@@ -598,7 +599,7 @@ export default {
   overflow: hidden;
   display: flex;
   position: relative;
-  min-height: calc(100% - 55px);
+  min-height: calc(100% - 60px);
 }
 
 .file-manager-box {
