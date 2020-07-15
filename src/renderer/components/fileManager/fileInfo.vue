@@ -202,7 +202,7 @@
                   v-for="(fileFilter, ext) in fileTypeFilters"
                   :key="ext + 'filter'"
                   :class="fileTypeFilterButtonClass(fileFilter.status)"
-                  :title="fileTypeFilterTitleClass(fileFilter, ext)"
+                  :title="fileTypeFilterTitle(fileFilter, ext)"
                   @click="fileFilter.status = !fileFilter.status"
                 >
                   <span class="file-filter-ext">{{ ext === ':directory:' ? '目录' : ext || '无扩展名' }}</span>
@@ -443,6 +443,7 @@ export default {
     }
   },
   computed: {
+    // 文件类型过滤器按钮样式
     fileTypeFilterButtonClass () {
       return status => {
         return (
@@ -451,13 +452,17 @@ export default {
         )
       }
     },
-    fileTypeFilterTitleClass () {
+
+    // 文件类型过滤器标题
+    fileTypeFilterTitle () {
       return (fileFilter, ext) => {
         const type = ext === ':directory:' ? '目录' : ext || '无扩展名文件'
         const status = fileFilter.status === true ? '已显示' : '已过滤'
         return `项目类型：${type}; 项目数量：${fileFilter.count}; ${status}`
       }
     },
+
+    // 控制按钮样式
     controlButtonClass () {
       return item => {
         return (
@@ -470,6 +475,8 @@ export default {
         )
       }
     },
+
+    // 搜索控制按钮样式
     searchControlButtonClass () {
       return item => {
         return 'control-button' +
@@ -483,17 +490,22 @@ export default {
       if (this.searchValue) this.filterCalculator(fileList)
       else this.filterCalculator(this.fileList)
     },
+
+    // 监听搜索设置变动，变动则立即进行搜索
     searchOptions: {
       handler: function (val) {
         this.handleSearch()
       },
       deep: true
     },
+
+    // 文件类型过滤器更改
     fileTypeFilters (filters) {
       this.$emit('filterChange', filters)
     }
   },
   methods: {
+    // 文件类型过滤器计算器（扩展名、数量、状态等）
     filterCalculator (fileList) {
       let dirCount = 0
       let fileCount = 0
@@ -519,6 +531,7 @@ export default {
       this.calcing = false
     },
 
+    // 输入框输入事件
     handleSearchInput () {
       // 文件较多时采用延时搜索，防止性能大量消耗
       if (this.fileList.length > 200) {
@@ -530,6 +543,7 @@ export default {
       } else { this.handleSearch() }
     },
 
+    // 搜索处理
     handleSearch () {
       this.$nextTick(() => {
         const { value } = this.$refs.fileSearchInput
@@ -537,6 +551,7 @@ export default {
       })
     },
 
+    // 文件过滤器右键上下文菜单
     fileFiltersContextmenu (event) {
       // 菜单项处理函数
       const handleFilter = (handle, status) => {
