@@ -174,6 +174,17 @@
                 <div>项目总数:</div>
                 <div>{{ fileList.length }}</div>
               </div>
+              <div class="file-detail-item">
+                <div>已选文件:</div>
+                <div>{{ selectedFiles.length }}</div>
+              </div>
+              <div
+                v-if="file"
+                class="file-detail-item"
+              >
+                <div>当前选择:</div>
+                <div>{{ file.name }}</div>
+              </div>
             </div>
             <div
               v-if="searchValue"

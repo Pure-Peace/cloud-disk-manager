@@ -77,31 +77,31 @@
       @click="handleFloatButtonClick"
     >
       <div :class="floatButtonMenuClass">
-        <div class="control-button">
+        <div class="menu-action-button">
           <span>文件搜索</span>
           <span style="padding: 0 5px;">
             <svg-icon icon-class="pro-view" />
           </span>
         </div>
-        <div class="control-button">
+        <div class="menu-action-button">
           <span>名称排序</span>
           <span style="padding: 0 5px;">
             <svg-icon icon-class="pro-view" />
           </span>
         </div>
-        <div class="control-button">
+        <div class="menu-action-button">
           <span>名称排序</span>
           <span style="padding: 0 5px;">
             <svg-icon icon-class="pro-view" />
           </span>
         </div>
-        <div class="control-button">
+        <div class="menu-action-button">
           <span>创建时间排序</span>
           <span style="padding: 0 5px;">
             <svg-icon icon-class="pro-view" />
           </span>
         </div>
-        <div class="control-button">
+        <div class="menu-action-button">
           <span>修改时间排序</span>
           <span style="padding: 0 5px;">
             <svg-icon icon-class="pro-view" />
@@ -198,6 +198,7 @@ export default {
 
     // 文件列表变更
     fileList (fileList) {
+      log(fileList)
       if (!this.searchValue) {
         // 将文件内容区的最小高度设置为数据完全加载后的高度
         // 由于实际上列表数据是懒加载的，这样做可以使得滚动条的比例完整，让人一眼看不出来是懒加载
@@ -627,6 +628,7 @@ export default {
 .float-button-menu-box {
   position: absolute;
   display: flex;
+  flex-direction: column;
   align-items: center;
   z-index: -1;
   bottom: 25px;
@@ -638,15 +640,15 @@ export default {
   justify-content: center;
   border-radius: 4px;
   background-color: #fafafa;
-  border: 2px solid #7a94ff;
+  border: 2px solid #5E72E4;
   transition: 0.2s ease;
+  box-shadow: 0 1px 2px 2px rgba(179, 179, 179, 0.329);
 }
 
 .float-button-menu-box-opened {
-  height: 60px;
+  height: 200px;
   opacity: 1;
-  width: 600px;
-  padding: 10px;
+  width: 150px;
   display: flex;
 }
 
@@ -704,5 +706,28 @@ export default {
 
 .handle-button:active {
   filter: brightness(.8);
+}
+
+.menu-action-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  white-space: nowrap;
+  width: 148px;
+  height: 40px;
+  background-color: #4C63E7;
+  transition: 0.2s ease;
+  font-size: 12px;
+  cursor: pointer;
+  color: #FFFFFF;
+  transition: .2s ease;
+}
+
+.menu-action-button:hover {
+  filter: brightness(0.9);
+}
+
+.menu-action-button:active {
+  filter: brightness(0.8);
 }
 </style>
