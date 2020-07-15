@@ -145,6 +145,7 @@ export default {
       visibleFileList: [],
       listingDir: 0, // 0: 未列目录; 1: 正在列目录; 2: 已列完目录
       filters: {},
+      searchOptions: {},
       filted: 0,
       searchValue: '',
       floatMenuOpen: false,
@@ -234,9 +235,13 @@ export default {
     // 文件搜索
     handleSearchFile (searchOptions) {
       const searchResutlList = []
-      const value = searchOptions.value.trim()
-      if (this.searchValue === value) return
+      const { value, ...options } = searchOptions
+
+      // 无任何改变就不重复进行搜索了
+      if (this.searchValue === value && this.searchOptions === options) return
       this.searchValue = value
+      this.searchOptions = options
+
       let searchMethod
 
       // 大小写不敏感
@@ -260,23 +265,30 @@ export default {
       }
 
       // 正则
-      const regexp = file => {
-        const regexp = new RegExp(value)
-        if (file.name.match(regexp)) return true
+      const regexpSearcher = (regexpObject) => {
+        return file => {
+          if (file.name.match(regexpObject)) return true
+        }
       }
 
       log(`start to search file [${value}]`)
       const start = Date.now()
       // 按照options选择搜索方法
-      if (searchOptions.regexp.status) {
-        searchMethod = regexp
+      if (options.regexp.status) {
+        try {
+          const regexp = new RegExp(value)
+          searchMethod = regexpSearcher(regexp)
+        } catch (err) {
+          console.warn(`search interrupt: Invalid regular expression: ${value}`)
+          return
+        }
         // 全等搜索要避免搜索空字符串（这样将会无结果）
-      } else if (searchOptions.congruent.status && value !== '') {
-        searchMethod = searchOptions.caseSensitive.status
+      } else if (options.congruent.status && value !== '') {
+        searchMethod = options.caseSensitive.status
           ? congruent
           : congruentNoCase
       } else {
-        searchMethod = searchOptions.caseSensitive.status
+        searchMethod = options.caseSensitive.status
           ? caseSensitive
           : notCaseSensitive
       }

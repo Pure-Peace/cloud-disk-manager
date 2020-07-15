@@ -128,7 +128,7 @@
               <div
                 v-show="searchValue"
                 class="file-search-input-button"
-                @click="handleClearSearch"
+                @click="handleSearch('clear')"
               >
                 <svg-icon icon-class="close" />
               </div>
@@ -549,12 +549,6 @@ export default {
       this.calcing = false
     },
 
-    // 取消搜索
-    handleClearSearch () {
-      this.$refs.fileSearchInput.value = ''
-      this.$emit('searchFile', Object.assign({ value: '' }, this.searchOptions))
-    },
-
     // 输入框输入事件
     handleSearchInput () {
       // 文件较多时采用延时搜索，防止性能大量消耗
@@ -570,8 +564,8 @@ export default {
     },
 
     // 搜索处理
-    handleSearch () {
-      const { value } = this.$refs.fileSearchInput
+    handleSearch (handle) {
+      const value = handle === 'clear' ? '' : this.$refs.fileSearchInput.value.trim()
       this.$emit('searchFile', Object.assign({ value }, this.searchOptions))
     },
 
