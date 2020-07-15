@@ -9,6 +9,7 @@
     <div class="empty-text">
       {{ text }}
     </div>
+    <slot />
   </div>
 </template>
 

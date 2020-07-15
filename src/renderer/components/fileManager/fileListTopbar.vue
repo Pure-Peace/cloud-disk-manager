@@ -46,7 +46,7 @@
     </div>
     <file-dir-path-bar
       :dir="dir"
-      @changeDir="handleChangeDir(targetDir)"
+      @changeDir="(targetDir)=>handleChangeDir(targetDir)"
     />
   </div>
 </template>

@@ -145,7 +145,7 @@
               style="margin-top: 25px; padding-top: 20px;"
             >
               <div class="file-detail-name">
-                配置项
+                搜索配置项
               </div>
               <div style="display: flex; justify-content: center; margin-top: 20px;">
                 <div
@@ -178,7 +178,7 @@
             <div
               v-if="searchValue"
               class="file-dirinfo-box"
-              style="margin-top: 25px; padding-top: 20px;"
+              style="margin-top: 10px; padding-top: 20px;"
             >
               <div class="file-detail-name">
                 搜索结果
@@ -484,6 +484,9 @@ export default {
           (!this.file && !item.view ? ' control-button-disalbed' : '') +
           (this.file && item.icon === 'unselect-file'
             ? ' control-button-warning'
+            : '') +
+          (this.searchValue && item.view === 'search'
+            ? ' control-button-modify'
             : '')
         )
       }
@@ -501,8 +504,11 @@ export default {
   watch: {
     // 计算目录及文件信息
     visibleList (fileList) {
-      if (this.searchValue) this.filterCalculator(fileList)
-      else this.filterCalculator(this.fileList)
+      if (fileList.length > 0 && this.searchValue) { this.filterCalculator(fileList) }
+    },
+
+    fileList (fileList) {
+      if (fileList.length > 0) this.filterCalculator(fileList)
     },
 
     // 监听搜索设置变动，变动则立即进行搜索
@@ -565,7 +571,8 @@ export default {
 
     // 搜索处理
     handleSearch (handle) {
-      const value = handle === 'clear' ? '' : this.$refs.fileSearchInput.value.trim()
+      const value =
+        handle === 'clear' ? '' : this.$refs.fileSearchInput.value.trim()
       this.$emit('searchFile', Object.assign({ value }, this.searchOptions))
     },
 
@@ -904,7 +911,7 @@ export default {
   padding: 5px;
   font-size: 18px;
   height: 100%;
-  transition: .2s ease;
+  transition: 0.2s ease;
   color: #424242;
   cursor: pointer;
 }
@@ -914,6 +921,11 @@ export default {
 }
 
 .file-search-input-button:active {
-  filter: brightness(.8);
+  filter: brightness(0.8);
+}
+
+.control-button-modify {
+  background-color: #FFECB3;
+  color: #000000;
 }
 </style>

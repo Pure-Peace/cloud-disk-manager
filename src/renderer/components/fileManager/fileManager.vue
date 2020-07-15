@@ -39,8 +39,18 @@
             />
             <empty-status
               :show="listingDir === 2 && visibleFileList.length === 0"
+              :text="searchValue ? '未搜索到任何结果哦' : '目录是空的哦'"
               @contextmenu.native="emptyShowContextMenu"
-            />
+            >
+              <div
+                v-if="searchValue"
+                class="handle-button"
+                style="margin-top: 20px;"
+                @click="$refs.fileInfo.handleSearch('clear')"
+              >
+                关闭搜索
+              </div>
+            </empty-status>
           </div>
         </vue-scroll>
       </div>
@@ -51,6 +61,7 @@
       />
     </div>
     <file-info
+      ref="fileInfo"
       :file="selectedFile"
       :file-list="fileList"
       :dir="currentDir"
@@ -187,11 +198,14 @@ export default {
 
     // 文件列表变更
     fileList (fileList) {
-      // 将文件内容区的最小高度设置为数据完全加载后的高度
-      // 由于实际上列表数据是懒加载的，这样做可以使得滚动条的比例完整，让人一眼看不出来是懒加载
-      this.$refs.fileListContent.style.minHeight = `${this.fileList.length *
-        65}px`
-      this.visibleFileList = this.fileList.slice(0, this.visibleCount)
+      if (!this.searchValue) {
+        // 将文件内容区的最小高度设置为数据完全加载后的高度
+        // 由于实际上列表数据是懒加载的，这样做可以使得滚动条的比例完整，让人一眼看不出来是懒加载
+        this.$refs.fileListContent.style.minHeight = `${this.fileList.length * 65}px`
+        this.visibleFileList = this.fileList.slice(0, this.visibleCount)
+      } else {
+        this.handleSearchFile(Object.assign({ value: this.searchValue }, this.searchOptions))
+      }
     },
 
     // 当前文件内容区可视文件数量变更
@@ -202,7 +216,7 @@ export default {
     filters: {
       deep: true,
       handler: function (filters) {
-        if (!this.visibleFileList.length) return
+        if (!this.visibleFileList.length || Object.keys(filters).length === 0) return
         // 计算过滤掉的文件数量
         const filtedCount = Object.values(filters).reduce((acc, filter) => {
           if (filter.status === false) acc += filter.count
@@ -214,9 +228,8 @@ export default {
           this.filted = filtedCount
         }
         // 重新计算列表滚动高度
-        this.$refs.fileListContent.style.minHeight = `${(this.fileList.length -
-          filtedCount) *
-          65}px`
+        const length = this.searchValue ? this.visibleFileList.length : this.fileList.length
+        this.$refs.fileListContent.style.minHeight = `${(length - filtedCount) * 65}px`
       }
     }
   },
@@ -416,15 +429,18 @@ export default {
       // 如果之前选择过的文件没有发生改变，将重建File对象，并保留之前的选择
       const handleHasSelectFiles = fileList => {
         let tempSelectedFile = null
+
         const tempSelectedFiles = []
         const selectedFile = this.selectedFile
         const selectedFiles = this.selectedFiles
 
+        // 遍历文件列表并查找selectedFiles，如果找不到文件就将选择丢失
         this.fileList = fileList.map(fileInfo => {
           const file = new File(fileInfo)
           const selectedIdx = selectedFiles.findIndex(
             selectedFile => selectedFile.ino === file.ino
           )
+
           if (selectedIdx !== -1) {
             file.selected = true
             tempSelectedFiles.push(file)
@@ -668,5 +684,25 @@ export default {
 .control-button-warning {
   background-color: #ffcdd2;
   color: #000000;
+}
+
+.handle-button {
+  cursor: pointer;
+  white-space: nowrap;
+  background-color: #E8EAF6;
+  padding: 8px 18px;
+  border-radius: 4px;
+  transition: 0.2s ease;
+  font-size: 14px;
+  cursor: pointer;
+  color: #000000;
+}
+
+.handle-button:hover {
+  filter: brightness(.9);
+}
+
+.handle-button:active {
+  filter: brightness(.8);
 }
 </style>
