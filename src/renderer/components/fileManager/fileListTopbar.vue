@@ -11,7 +11,17 @@
       <span>目录</span>
     </div>
     <div
-      v-if="historys[dir] && historys[dir].from"
+      v-show="dir.split(sep).filter(i=>i !== '').length > 1"
+      class="folder-button"
+      title="上一级"
+      @click="handleChangeUp"
+    >
+      <span class="folder-button-icon">
+        <svg-icon icon-class="up" />
+      </span>
+    </div>
+    <div
+      v-show="historys[dir] && historys[dir].from"
       class="folder-button"
       title="返回"
       @click="handleChangeDir(historys[dir].from)"
@@ -19,10 +29,10 @@
       <span class="folder-button-icon">
         <svg-icon icon-class="back-folder" />
       </span>
-      <span>返回</span>
+      <span>后退</span>
     </div>
     <div
-      v-if="historys[dir] && historys[dir].to"
+      v-show="historys[dir] && historys[dir].to"
       class="folder-button"
       title="前进"
       @click="handleChangeDir(historys[dir].to)"
@@ -32,6 +42,7 @@
       </span>
       <span>前进</span>
     </div>
+
     <div
       class="folder-button"
       title="刷新（F5）"
@@ -54,6 +65,8 @@
 <script>
 import fileDirPathBar from './fileDirPathBar.vue'
 
+const PATH = require('path')
+
 export default {
   components: {
     fileDirPathBar
@@ -70,7 +83,9 @@ export default {
   },
   data () {
     return {
-      historys: {}
+      historys: {},
+      sep: PATH.sep
+
     }
   },
   watch: {
@@ -80,6 +95,12 @@ export default {
     }
   },
   methods: {
+    // 跳至上级目录
+    handleChangeUp () {
+      const targetDir = this.dir.split(this.sep).slice(0, -1).join(this.sep)
+      this.handleChangeDir(targetDir.includes(this.sep) ? targetDir : targetDir + this.sep)
+    },
+
     // 改变目录
     handleChangeDir (dir) {
       this.$emit('changeDir', dir)

@@ -47,14 +47,25 @@ export default {
           handler: async (e, arg) => {
             const dirPath = arg.dirPath
             const initialFile = (path) => new File(path)
-            // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
-            const fileList = await Promise.all(
-              fs.readdirSync(dirPath).map(
-                async (fileName) => await initialFile(PATH.join(dirPath, fileName))
+            let error = 0
+
+            try {
+              // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
+              const files = fs.readdirSync(dirPath)
+              const fileList = await Promise.all(
+                files.map(
+                  async (fileName) => await initialFile(PATH.join(dirPath, fileName))
+                )
               )
-            )
-            // 发送结果，此处基于发送过来的事件eventId（一个md5）进行回复，而非基于客户端
-            e.echo(arg.eventId, { fileList })
+              // 发送结果，此处基于发送过来的事件eventId（一个md5）进行回复，而非基于客户端
+              e.echo(arg.eventId, { fileList })
+            } catch (err) {
+              error = 2
+              // 错误
+              console.warn('listDir error:', err)
+              if (err.message.includes('no such file or directory')) error = 1
+              e.echo(arg.eventId, { error, message: err.message })
+            }
           }
         },
         // 基于客户端的事件处理 ------------------------------

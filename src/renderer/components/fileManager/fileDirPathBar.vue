@@ -3,24 +3,40 @@
     class="file-dir-path-bar"
     :title="'当前目录：' + dir"
     @contextmenu.prevent="dirPathBarShowContextMenu"
+    @dblclick="editing = true"
   >
-    <span
-      v-for="(dirName, idx) in dirList"
-      :key="dirName + idx"
+    <div
+      v-show="!editing"
+      class="dir-path"
     >
       <span
-        class="file-dirname"
-        :style="dirList.slice(-1) == dirName ? 'font-weight: bold;' : ''"
-        :title="`转到目录：${getTargetDir(idx)}`"
-        @click="handleClickDirname(idx)"
+        v-for="(dirName, idx) in dirList"
+        :key="dirName + idx"
       >
-        {{ dirName }}
+        <span
+          class="file-dirname"
+          :style="dirList.slice(-1) == dirName ? 'font-weight: bold;' : ''"
+          :title="`转到目录：${getTargetDir(idx)}`"
+          @click="handleClickDirname(idx)"
+        >{{ dirName }}</span>
+        <span
+          v-if="idx + 1 < dirList.length"
+          class="file-sep"
+        >{{ sep }}</span>
       </span>
-      <span
-        v-if="idx + 1 < dirList.length"
-        class="file-sep"
-      >{{ sep }}</span>
-    </span>
+    </div>
+    <div
+      v-show="editing"
+      style="height: 100%;"
+    >
+      <input
+        ref="dirInput"
+        class="dir-input"
+        :value="dir"
+        @blur.prevent="editing = false"
+        @keypress.enter="editing = false"
+      >
+    </div>
   </div>
 </template>
 
@@ -37,12 +53,13 @@ export default {
   data () {
     return {
       sep: PATH.sep,
-      dirList: []
+      dirList: [],
+      editing: false
     }
   },
   computed: {
     getTargetDir () {
-      return (idx) => {
+      return idx => {
         // 取出目标路径
         const targetDir = this.dirList.slice(0, idx + 1).join(this.sep)
         // 若是根级目录，在路径最后方加上分隔符
@@ -53,10 +70,22 @@ export default {
   watch: {
     dir (val) {
       this.dirList = this.dir.split(this.sep)
+    },
+
+    editing (val) {
+      if (val === true) {
+        this.$nextTick(() => {
+          this.$refs.dirInput.focus()
+        })
+      } else {
+        const targetDir = this.$refs.dirInput.value.trim()
+        if (targetDir !== this.dir) this.$emit('changeDir', targetDir)
+      }
     }
   },
 
   methods: {
+
     // 地址栏单级目录单击发射changeDir事件
     handleClickDirname (idx) {
       const targetDir = this.getTargetDir(idx)
@@ -77,6 +106,12 @@ export default {
             label: '复制完整路径',
             onClick: () => {
               this.$bus.clipboard.writeText(this.dir)
+            }
+          },
+          {
+            label: '编辑路径（双击地址栏）',
+            onClick: () => {
+              this.editing = true
             }
           }
         ],
@@ -104,7 +139,6 @@ export default {
       })
     }
   }
-
 }
 </script>
 
@@ -114,7 +148,6 @@ export default {
   white-space: nowrap;
   text-overflow: ellipsis;
   margin-left: 8px;
-  padding: 0 15px;
   height: 36px;
   border-radius: 4px;
   color: #283593;
@@ -133,7 +166,30 @@ export default {
 }
 
 .file-dirname:hover {
-  filter: brightness(.6);
+  filter: brightness(0.6);
   border-bottom: 1.2px dashed;
+}
+
+.dir-input {
+  display: block;
+  height: 100%;
+  border: 2px solid #f1f1f1;
+  padding: 0 15px;
+  transition: 0.2s ease;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #283593;
+}
+
+.dir-input:hover {
+  border-color: #7a94ff;
+}
+
+.dir-input:focus {
+  border-color: #7a94ff;
+}
+
+.dir-path {
+  padding: 0 15px;
 }
 </style>

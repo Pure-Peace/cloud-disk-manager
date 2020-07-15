@@ -190,6 +190,7 @@ export default {
   border-left: 1px solid rgba(255, 255, 255, 0);
   border-bottom: 1px solid rgba(210, 214, 241, .6);
   height: 70px;
+  // transition: background-color .2s ease;
 }
 
 .file-item:hover {

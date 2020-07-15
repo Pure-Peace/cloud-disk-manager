@@ -338,6 +338,14 @@
                 <div>完整路径:</div>
                 <div>{{ file.path }}</div>
               </div>
+
+              <div
+                v-show="selectedFiles.length > 1"
+                class="file-detail-item"
+              >
+                <div>已选文件:</div>
+                <div>{{ selectedFiles.length }}</div>
+              </div>
             </div>
             <div
               v-if="file.initialed"

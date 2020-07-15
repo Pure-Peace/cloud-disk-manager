@@ -78,12 +78,6 @@
     >
       <div :class="floatButtonMenuClass">
         <div class="menu-action-button">
-          <span>文件搜索</span>
-          <span style="padding: 0 5px;">
-            <svg-icon icon-class="pro-view" />
-          </span>
-        </div>
-        <div class="menu-action-button">
           <span>名称排序</span>
           <span style="padding: 0 5px;">
             <svg-icon icon-class="pro-view" />
@@ -199,7 +193,6 @@ export default {
 
     // 文件列表变更
     fileList (fileList) {
-      log(fileList)
       if (!this.searchValue) {
         // 将文件内容区的最小高度设置为数据完全加载后的高度
         // 由于实际上列表数据是懒加载的，这样做可以使得滚动条的比例完整，让人一眼看不出来是懒加载
@@ -472,6 +465,13 @@ export default {
       this.$bus
         .chokidarHandler('listDir', { dirPath })
         .then(result => {
+          // 判断是否出错
+          if (result.error) {
+            if (result.error === 1) this.$bus.dialog.showErrorBox('无法找到目录', `列目录时发生错误，找不到指定目录"${dirPath}"，请检查是否输入了正确的目录。`)
+            else this.$bus.dialog.showErrorBox('列目录时发生错误', result.message)
+            throw new Error(result.message)
+          }
+
           // 由于上述过程完成的结果是通过ipc通信发送的，所以对象的方法将会丢失，因此在这里重建我们File类的方法
           if (this.selectedFiles.length > 0) {
             handleHasSelectFiles(result.fileList)
@@ -647,7 +647,7 @@ export default {
 }
 
 .float-button-menu-box-opened {
-  height: 200px;
+  height: calc(4 * 40px);
   opacity: 1;
   width: 150px;
   display: flex;
