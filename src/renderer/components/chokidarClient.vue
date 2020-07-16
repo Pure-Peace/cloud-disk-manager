@@ -8,6 +8,26 @@
 const log = console.log
 
 export default {
+  props: {
+    dir: {
+      type: String,
+      default: ''
+    },
+    events: {
+      type: Array,
+      default: () => ['unlink', 'add']
+    },
+    options: {
+      type: Object,
+      default: () => {
+        return { depth: 0 }
+      }
+    },
+    componentId: {
+      type: String,
+      default: ''
+    }
+  },
   data () {
     return {
       chokidar: {
@@ -16,22 +36,23 @@ export default {
         connected: false,
         ready: true,
         initialing: false,
-        send: Function,
         closingInterval: undefined,
         closing: false,
         cantUseTipShowed: false,
         callbacks: [
+
+          // 服务事件------------------------------------
           {
             // 获取chokidar服务状态
             event: 'status',
             handler: data => {
               try {
-                data = data[0]
-                Object.assign(this.chokidar, data)
+                Object.assign(this.chokidar, data || {})
+                console.log('chokidar status:', this.chokidar)
                 if (data.status === 'RUNNING') this.chokidar.connected = true
                 else this.cantUseChokidar()
               } catch (err) {
-                this.cantUseChokidar(err)
+                this.cantUseChokidar(err.message)
                 throw new Error(err)
               }
             }
@@ -41,13 +62,15 @@ export default {
             event: 'initialerror',
             handler: err => {
               console.error(err)
-              this.cantUseChokidar(err)
+              this.cantUseChokidar(err.message)
+              throw new Error(err)
             }
           },
           {
             // 初始化chokidar的文件watcher
             event: 'watcherInitialing',
             handler: (...args) => {
+              this.$emit('watcherIniting')
               this.chokidar.initialing = true
               this.chokidar.ready = false
             }
@@ -56,6 +79,7 @@ export default {
             // watcher就绪，文件监控可用
             event: 'watcherReady',
             handler: (...args) => {
+              this.$emit('watcherReady')
               this.chokidar.initialing = false
               this.chokidar.ready = true
               this.getChokidarStatus()
@@ -116,24 +140,55 @@ export default {
           }
         ]
       }
+    }
+  },
+  watch: {
+    dir (newDir, oldDir) {
+      if (!newDir || newDir === oldDir) return
 
+      if (oldDir === '') {
+        this.initWatcher()
+      } else {
+        this.chokidar.send('changeDir', { newDir })
+      }
     }
   },
   created () {
     this.initChokidarEvents()
     this.connectChokidar()
     this.getChokidarStatus()
-    this.initWatcher()
+    this.initFileWatchEvents()
+  },
+  // 客户端退出时需要关闭位于chokidar子服务的watcher
+  beforeDestroy () {
+    clearInterval(this.chokidar.closingInterval)
+    this.chokidar.send('closeWatcher')
   },
   methods: {
+    initFileWatchEvents () {
+      this.events.forEach(fileEvent => {
+        this.addEvent(this.fileWatchEvent(fileEvent), (e, arg) => {
+          this.$emit(fileEvent + 'Watched', arg) // 向父组件发送事件
+        })
+      })
+    },
+
+    fileWatchEvent (event) {
+      return 'watchEvent:' + event
+    },
+
     // 初始化watcher
-    initWatcher (
-      data = { events: ['all'], target: this.currentDir, options: undefined }
-    ) {
+    initWatcher (options) {
+      if (!this.dir) return
+      const data = {
+        events: this.events,
+        target: this.dir.trim(),
+        options: options || this.options
+      }
       if (
         !this.chokidar.disabled &&
         !this.chokidar.initialing &&
-        !this.chokidar.watcher
+        this.dir !== this.chokidar.target
       ) {
         if (typeof data !== 'object') throw new Error('data must be an object')
         this.chokidar.initialing = true
@@ -147,7 +202,7 @@ export default {
         this.chokidar.closing = true
         this.chokidar.closingInterval = setInterval(() => {
           this.chokidar.send('closeWatcher')
-        }, 500)
+        }, 1500)
       }
     },
     // 连接到chokidar服务
@@ -156,13 +211,15 @@ export default {
         log('try to connect chokidar service...')
         try {
           const chokidarService = this.$bus.getSubService('chokidarService')
-          if (!chokidarService) { throw Error('can not connect to chokidar service!') }
+          if (!chokidarService) {
+            throw Error('can not connect to chokidar service!')
+          }
           this.chokidar.service = chokidarService
           this.chokidar.send = (channel, data) => {
             this.$electron.ipcRenderer.sendTo(
               this.chokidar.service.win.id,
               channel,
-              data
+              Object.assign({ componentId: this.componentId }, data)
             )
             log(
               `%csend a message to chokidar, channel: [${channel}], data:`,
@@ -186,22 +243,26 @@ export default {
 
     // 添加ipcrender事件
     addEvent (event, handler) {
+      const channel = this.componentId + event
       try {
-        this.$electron.ipcRenderer.removeAllListeners(event)
-        this.$electron.ipcRenderer.on(event, handler)
-        log(`added ipc event [${event}]!`)
+        this.$electron.ipcRenderer.removeAllListeners(channel)
+        this.$electron.ipcRenderer.on(channel, handler)
+        log(`added ipc event [${event}] on channel ${channel}!`)
       } catch (e) {
         throw new Error(e)
       }
     },
 
+    channel (event) {
+      return this.componentId + event
+    },
+
     // 初始化所有事件
     initChokidarEvents () {
-      const channel = event => this.chokidar.serviceName + event
       this.chokidar.callbacks.forEach(item =>
-        this.addEvent(channel(item.event), (e, arg) => {
+        this.addEvent(item.event, (e, arg) => {
           log(
-            `%crecived a message from chokidar, channel: [${channel(
+            `%crecived a message from chokidar, channel: [${this.channel(
               item.event
             )}], content:`,
             'color: blue; font-weight: bold;',

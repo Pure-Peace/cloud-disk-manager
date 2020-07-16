@@ -141,6 +141,10 @@ const install = (Vue, options) => {
           const eventId = this.$md5(
             Date.now() + this.win.id + subServiceId + channel
           )
+          // 组件id
+          const {
+            componentId
+          } = data
           // 发送处理
           this.$electron.ipcRenderer.sendTo(
             subServiceId,
@@ -150,9 +154,9 @@ const install = (Vue, options) => {
             }, data)
           )
           // 等待处理完成
-          this.$electron.ipcRenderer.once(eventId, (e, arg) => {
+          this.$electron.ipcRenderer.once(componentId + eventId, (e, arg) => {
             console.log(
-              `chokidarHandler event: ${eventId} resolved, time spent: ${Date.now() -
+              `chokidarHandler event: ${componentId + eventId} resolved, time spent: ${Date.now() -
               start}ms`
             )
             resolve(arg)

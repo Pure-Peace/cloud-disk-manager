@@ -274,7 +274,10 @@
                   v-if="calcing"
                   class="file-filter-box"
                 >
-                  <div class="file-type-filter-button">
+                  <div
+                    class="file-type-filter-button"
+                    style="flex: 0;"
+                  >
                     文件类型计算中...
                   </div>
                 </div>
@@ -890,6 +893,8 @@ export default {
   margin-bottom: 6px;
   font-size: 12px;
   transition: 0.2s ease;
+  flex: 1;
+  white-space: nowrap;
 }
 
 .file-type-filter-button:hover {
@@ -909,6 +914,7 @@ export default {
   justify-content: space-between;
   padding: 15px 0;
   flex-wrap: wrap;
+
 }
 
 .file-filter-count {

@@ -8,7 +8,7 @@
     <h3>totalSend: {{ totalSend }}</h3>
     <h3>totalRecived: {{ totalRecived }}</h3>
     <h3>totalError: {{ totalError }}</h3>
-    <h3>eventTrigged: {{ eventTrigged }}</h3>
+    <h3>WatchEventTrigged: {{ eventTrigged }}</h3>
     <h3>watchedFiles: {{ watchedFiles }}</h3>
     <h3>clients: {{ Object.keys(clients) }}</h3>
     <h3>client counts: {{ Object.keys(clients).length }}</h3>
@@ -36,6 +36,7 @@ export default {
       totalError: 0,
       eventTrigged: 0,
       watchedFiles: 0,
+      excludes: ['topbar', ''],
       // 已连接的客户端，每个客户端的watcher独立
       clients: {},
       // handlers是面向客户端的处理器
@@ -46,18 +47,19 @@ export default {
           event: 'listDir',
           handler: async (e, arg) => {
             const dirPath = arg.dirPath
-            const initialFile = (path) => new File(path)
+            const initialFile = path => new File(path)
             let error = 0
 
             try {
               // 无此路径则抛错
-              if (!fs.pathExistsSync(dirPath)) throw new Error('no such file or directory')
+              if (!fs.pathExistsSync(dirPath)) { throw new Error('no such file or directory') }
 
               // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
               const files = fs.readdirSync(dirPath)
               const fileList = await Promise.all(
                 files.map(
-                  async (fileName) => await initialFile(PATH.join(dirPath, fileName))
+                  async fileName =>
+                    await initialFile(PATH.join(dirPath, fileName))
                 )
               )
               // 发送结果，此处基于发送过来的事件eventId（一个md5）进行回复，而非基于客户端
@@ -91,15 +93,41 @@ export default {
           }
         },
         {
+        // 变更观察路径
+          event: 'changeDir',
+          echoEvent: 'changeDir',
+          handler: (e, arg) => {
+            const { newDir } = arg
+            e.client.watcher.add(newDir)
+            log('changed watch dir:', newDir)
+            // e.client.watcher.unwatch(e.client.target)
+          }
+        },
+        {
           // 初始化watcher
           event: 'initWatcher',
-          echoEvents: ['watcherInitialing', 'watcherReady', 'watcherError', 'initialerror'],
+          echoEvents: [
+            'watcherInitialing',
+            'watcherReady',
+            'watcherError',
+            'initialerror'
+          ],
           handler: (e, arg) => {
             try {
-              const events = arg.events || []
-
-              // watcher，遍历深度depth默认为0（当前目录，不往下遍历）
-              const watcher = chokidar.watch(arg.target, arg.options || { depth: 0 })
+              if (!arg.target || !arg.target.trim()) return
+              const events = (arg.events && arg.events.length > 0 && arg.events) || ['all']
+              log('你过来呀')
+              if (e.client && e.client.watcher) {
+                log('已有watcher，更新路径')
+                return
+              }
+              // 设置watcher，如果有传递过来options就使用options
+              const watcher = chokidar.watch(
+                arg.target,
+                arg.options && Object.keys(arg.options).length > 0
+                  ? arg.options
+                  : { depth: 0 }
+              )
                 .on('ready', () => {
                   e.setClient('ready', true)
                   e.setClient('watchedCount', watcher.getWatched().length)
@@ -112,9 +140,14 @@ export default {
 
               // 添加要watch的event
               events.forEach(event => {
+                // 当文件变更时会触发watcher
                 watcher.on(event, (...args) => {
                   this.eventTrigged += 1
-                  e.echo(`watchEvent:${event}`, args)
+
+                  const fileEvent = event === 'all' ? args[0] || event : event // event不为all的时候似乎arg里没有事件名
+
+                  // 向客户端发送消息，channel：客户端id（componentId）+ args[0] || event
+                  e.echo(`watchEvent:${fileEvent}`, { event: fileEvent, data: args })
                 })
               })
 
@@ -122,7 +155,10 @@ export default {
               e.setClient('target', arg.target)
               e.setClient('ready', false)
               e.setClient('watcher', watcher)
-              e.echo('watcherInitialing', 'please wait for watcher to initialize')
+              e.echo(
+                'watcherInitialing',
+                'please wait for watcher to initialize'
+              )
             } catch (err) {
               e.echo('initialerror', err)
               throw new Error(err)
@@ -135,13 +171,39 @@ export default {
           echoEvents: ['watcherClosing', 'watcherClosed'],
           handler: (e, arg) => {
             try {
-              e.watcher.close().then(() => {
-                e.echo('watcherClosed', e.client)
+              if (e.watcher) {
+                e.watcher.close().then(() => {
+                  e.echo('watcherClosed', e.client)
+                  e.clearClient()
+                })
+              } else {
                 e.clearClient()
-              })
+              }
               e.echo('watcherClosing', 'please wait for watcher to close')
-            } catch (e) {
+            } catch (err) {
               throw new Error('already closed')
+            }
+          }
+        },
+        {
+          // 关闭所有watcher
+          event: 'closeAllWatcher',
+          echoEvents: [],
+          handler: (e, arg) => {
+            try {
+              for (const key in this.clients) {
+                const client = this.clients[key]
+                if (client.watcher) {
+                  client.watcher.close().then(() => {
+                    delete this.clients[key]
+                  })
+                } else {
+                  delete this.clients[key]
+                }
+              }
+              e.echo('AllWatcherClosing', '')
+            } catch (err) {
+              throw new Error(err)
             }
           }
         },
@@ -199,22 +261,25 @@ export default {
   },
   methods: {
     // 设置保存的客户端数据
-    setClient (id, key, value) {
-      if (!this.clients[id]) {
-        log(`create client ${id}`)
-        this.clients[id] = {}
+    setClient (componentId, senderId, key, value) {
+      if (!this.clients[componentId]) {
+        log(`create client ${componentId}`)
+        this.clients[componentId] = { componentId, senderId }
       }
 
-      this.clients[id][key] = value
+      this.clients[componentId][key] = value
     },
 
     // 向客户端发送信息（ipcrenderer)
-    sendTo (id, channel, data = 'recived') {
-      // channel = this.serviceName + channel
+    sendTo (senderId, componentId, channel, data = 'recived') {
+      channel = componentId + channel
       try {
-        this.$electron.ipcRenderer.sendTo(id, channel, data)
+        this.$electron.ipcRenderer.sendTo(senderId, channel, data)
         this.totalSend += 1
-        log(`%c#${this.totalSend}: send a message to client(#${id}) channel: [${channel}]`, 'color: green; font-weight: bold;')
+        log(
+          `%c#${this.totalSend}: send a message to client(#${componentId}) channel: [${channel}]`,
+          'color: green; font-weight: bold;'
+        )
       } catch (e) {
         this.totalError += 1
         throw new Error(e)
@@ -235,31 +300,57 @@ export default {
 
     // 初始化所有eventHandlers
     initEvents () {
-      this.handlers.forEach(item => this.addEvent(
+      this.handlers.forEach(item =>
+        this.addEvent(
+          // 当event触发
+          item.event,
+          (e, arg) => {
+            this.totalRecived += 1
+            const senderId = e.senderId // 也就是窗口id
+            const { componentId } = arg // 组件id
+            log(
+              `%c#${this.totalRecived}: recived a message from client(#${componentId}), channel: ${item.event}, content:`,
+              'color: blue; font-weight: bold;',
+              arg
+            )
 
-        // 当event触发
-        item.event, (e, arg) => {
-          this.totalRecived += 1
-          const id = e.senderId
-          log(`%c#${this.totalRecived}: recived a message from client(#${id}), channel: ${item.event}, content:`, 'color: blue; font-weight: bold;', arg)
-          if (!this.clients[id]) this.clients[id] = { watcher: null, ready: false }
-          const that = this
+            const that = this
 
-          // 调用与event对应的handler处理
-          try {
-            item.handler({
-              echo: (channel, data) => { this.sendTo(id, channel, data) }, // 闭包函数，用于对发送消息的客户端进行回复
-              setClient: (key, value) => { this.setClient(id, key, value) }, // 闭包函数，用于对发送消息的客户端状态进行设置
-              clearClient: () => { this.clients[id] = {} }, // 闭包函数，清除发送消息的客户端
-              get client () { return that.clients[id] }, // 发送消息的客户端
-              get watcher () { return that.clients[id].watcher }, // 此客户端对应的watcher
-              senderId: id // 客户端的窗口（webContents）id
-            }, arg)
-          } catch (e) {
-            this.totalError += 1
-            throw new Error(e)
+            // 调用与event对应的handler处理
+            try {
+              item.handler(
+                {
+                  // 闭包函数，用于对发送消息的客户端进行回复
+                  echo: (channel, data) => {
+                    this.sendTo(senderId, componentId, channel, data)
+                  },
+
+                  setClient: (key, value) => {
+                    this.setClient(componentId, senderId, key, value)
+                  },
+                  // 闭包函数，清除发送消息的客户端
+                  clearClient: () => {
+                    delete (this.clients[componentId])
+                  },
+                  // 发送消息的客户端
+                  get client () {
+                    return that.clients[componentId]
+                  },
+                  // 此客户端对应的watcher
+                  get watcher () {
+                    return that.clients[componentId].watcher
+                  },
+                  senderId, // 客户端的窗口（webContents）id
+                  componentId // 组件id
+                },
+                arg
+              )
+            } catch (e) {
+              this.totalError += 1
+              throw new Error(e)
+            }
           }
-        })
+        )
       )
     },
     // 初始化一切！

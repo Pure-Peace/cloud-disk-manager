@@ -108,6 +108,14 @@
         </div>
       </div>
     </float-button>
+    <chokidar-client
+      v-show="false"
+      :component-id="componentId"
+      :dir="currentDir"
+      @addWatched="(data)=>handleAddWatched(data)"
+      @unlinkWatched="(data)=>handleUnlinkWatched(data)"
+      @watcherReady="watcherReady=true"
+    />
   </div>
 </template>
 
@@ -123,6 +131,9 @@ import vueLoading from 'vue-element-loading'
 import dragResize from 'components/dragResize.vue'
 import emptyStatus from 'components/emptyStatus.vue'
 import floatButton from 'components/floatButton.vue'
+import chokidarClient from 'components/chokidarClient.vue'
+
+import uuid from 'uuid/v1'
 
 const log = console.log
 
@@ -134,7 +145,8 @@ export default {
     fileListTopbar,
     emptyStatus,
     fileListItem,
-    floatButton
+    floatButton,
+    chokidarClient
   },
   props: {
     targetDir: {
@@ -148,9 +160,12 @@ export default {
   },
   data () {
     return {
+      componentId: uuid(),
       selectedFile: null,
       selectedFiles: [],
       fileList: [],
+      filePaths: {},
+      watcherReady: false,
       visibleCount: 10,
       visibleFileList: [],
       listingDir: 0, // 0: 未列目录; 1: 正在列目录; 2: 已列完目录
@@ -198,13 +213,20 @@ export default {
 
     // 文件列表变更
     fileList (fileList) {
+      this.filePaths = fileList.reduce((acc, cur) => {
+        return { ...acc, [cur.path]: cur }
+      }, {})
+      log(this.filePaths)
       if (!this.searchValue) {
         // 将文件内容区的最小高度设置为数据完全加载后的高度
         // 由于实际上列表数据是懒加载的，这样做可以使得滚动条的比例完整，让人一眼看不出来是懒加载
-        this.$refs.fileListContent.style.minHeight = `${this.fileList.length * this.fileItemHeight}px`
+        this.$refs.fileListContent.style.minHeight = `${this.fileList.length *
+          this.fileItemHeight}px`
         this.visibleFileList = this.fileList.slice(0, this.visibleCount)
       } else {
-        this.handleSearchFile(Object.assign({ value: this.searchValue }, this.searchOptions))
+        this.handleSearchFile(
+          Object.assign({ value: this.searchValue }, this.searchOptions)
+        )
       }
     },
 
@@ -216,7 +238,7 @@ export default {
     filters: {
       deep: true,
       handler: function (filters) {
-        if (!this.visibleFileList.length || Object.keys(filters).length === 0) return
+        if (!this.visibleFileList.length || Object.keys(filters).length === 0) { return }
         // 计算过滤掉的文件数量
         const filtedCount = Object.values(filters).reduce((acc, filter) => {
           if (filter.status === false) acc += filter.count
@@ -228,8 +250,11 @@ export default {
           this.filted = filtedCount
         }
         // 重新计算列表滚动高度
-        const length = this.searchValue ? this.visibleFileList.length : this.fileList.length
-        this.$refs.fileListContent.style.minHeight = `${(length - filtedCount) * this.fileItemHeight}px`
+        const length = this.searchValue
+          ? this.visibleFileList.length
+          : this.fileList.length
+        this.$refs.fileListContent.style.minHeight = `${(length - filtedCount) *
+          this.fileItemHeight}px`
       }
     }
   },
@@ -238,29 +263,36 @@ export default {
     this.$nextTick(() => {
       // 初始加载2屏的数据
       this.visibleCount =
-        Math.round(this.$refs.vueScroll.$el.clientHeight / this.fileItemHeight) * 2
+        Math.round(
+          this.$refs.vueScroll.$el.clientHeight / this.fileItemHeight
+        ) * 2
     })
   },
   created () {
     this.initialCurrentDir()
   },
   methods: {
-    handleFilePaste (file) {
-
+    handleAddWatched (data) {
+      if (this.watcherReady) {
+        log('文件被添加', data)
+        this.handleRefreshFolder()
+      }
     },
-
-    handleCopy (file) {
-
+    handleUnlinkWatched (data) {
+      log('文件被删除', data)
+      this.handleRefreshFolder()
     },
-    handleCut (file) {
-
+    handleChangeWatched (data) {
+      log('文件被修改', data)
+      this.handleRefreshFolder()
     },
-    handleMove (file) {
-
-    },
+    handleFilePaste (file) {},
+    handleCopy (file) {},
+    handleCut (file) {},
+    handleMove (file) {},
     // 文件被移除时触发
     fileRemoved (removedFile, idxInVisibleList) {
-      this.handleRefreshFolder()
+      // this.handleRefreshFolder()
       /*
       if (idxInVisibleList) delete (this.visibleFileList[idxInVisibleList])
       const idxInFileList = this.fileList.findIndex(file => file === removedFile)
@@ -302,7 +334,7 @@ export default {
       }
 
       // 正则
-      const regexpSearcher = (regexpObject) => {
+      const regexpSearcher = regexpObject => {
         return file => {
           if (file.name.match(regexpObject)) return true
         }
@@ -316,7 +348,9 @@ export default {
           const regexp = new RegExp(value)
           searchMethod = regexpSearcher(regexp)
         } catch (err) {
-          console.warn(`search interrupt: Invalid regular expression: ${value}`)
+          console.warn(
+            `search interrupt: Invalid regular expression: ${value}`
+          )
           return
         }
         // 全等搜索要避免搜索空字符串（这样将会无结果）
@@ -335,7 +369,8 @@ export default {
         if (searchMethod(file)) searchResutlList.push(file)
       }
       this.visibleFileList = searchResutlList
-      this.$refs.fileListContent.style.minHeight = `${searchResutlList.length * this.fileItemHeight}px`
+      this.$refs.fileListContent.style.minHeight = `${searchResutlList.length *
+        this.fileItemHeight}px`
 
       log(
         `search complete, find result: ${searchResutlList.length}`,
@@ -352,7 +387,9 @@ export default {
     // 当1屏的大小发生变化时，重新计算1屏的可视数据量
     visibleAeraResize () {
       const resizedVisibleCount =
-        Math.round(this.$refs.vueScroll.$el.clientHeight / this.fileItemHeight) * 2
+        Math.round(
+          this.$refs.vueScroll.$el.clientHeight / this.fileItemHeight
+        ) * 2
       if (this.visibleCount < resizedVisibleCount) {
         this.visibleCount = resizedVisibleCount
       }
@@ -374,8 +411,9 @@ export default {
         this.scrollLength -= this.$refs.vueScroll.$el.clientHeight
         // 加载1屏的数据，并附加过度滚动补偿数据
         this.visibleCount +=
-          Math.round(this.$refs.vueScroll.$el.clientHeight / this.fileItemHeight) +
-          Math.round(this.scrollLength / this.fileItemHeight)
+          Math.round(
+            this.$refs.vueScroll.$el.clientHeight / this.fileItemHeight
+          ) + Math.round(this.scrollLength / this.fileItemHeight)
       }
     },
 
@@ -492,12 +530,16 @@ export default {
       // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
       // 由于这是通过子服务chokidarService进行处理的，所以实际上当前进程只需要等待结果即可
       this.$bus
-        .chokidarHandler('listDir', { dirPath })
+        .chokidarHandler('listDir', { dirPath, componentId: this.componentId })
         .then(result => {
           // 判断是否出错
           if (result.error) {
-            if (result.error === 1) this.$bus.dialog.showErrorBox('无法找到目录', `列目录时发生错误，找不到指定目录"${dirPath}"，请检查是否输入了正确的目录。`)
-            else this.$bus.dialog.showErrorBox('列目录时发生错误', result.message)
+            if (result.error === 1) {
+              this.$bus.dialog.showErrorBox(
+                '无法找到目录',
+                `列目录时发生错误，找不到指定目录"${dirPath}"，请检查是否输入了正确的目录。`
+              )
+            } else { this.$bus.dialog.showErrorBox('列目录时发生错误', result.message) }
             throw new Error(result.message)
           }
 
@@ -670,7 +712,7 @@ export default {
   justify-content: center;
   border-radius: 4px;
   background-color: #fafafa;
-  border: 2px solid #5E72E4;
+  border: 2px solid #5e72e4;
   transition: 0.2s ease;
   box-shadow: 0 1px 2px 2px rgba(179, 179, 179, 0.329);
 }
@@ -721,7 +763,7 @@ export default {
 .handle-button {
   cursor: pointer;
   white-space: nowrap;
-  background-color: #E8EAF6;
+  background-color: #e8eaf6;
   padding: 8px 18px;
   border-radius: 4px;
   transition: 0.2s ease;
@@ -731,11 +773,11 @@ export default {
 }
 
 .handle-button:hover {
-  filter: brightness(.9);
+  filter: brightness(0.9);
 }
 
 .handle-button:active {
-  filter: brightness(.8);
+  filter: brightness(0.8);
 }
 
 .menu-action-button {
@@ -745,12 +787,12 @@ export default {
   white-space: nowrap;
   width: 148px;
   height: 40px;
-  background-color: #4C63E7;
+  background-color: #4c63e7;
   transition: 0.2s ease;
   font-size: 12px;
   cursor: pointer;
-  color: #FFFFFF;
-  transition: .2s ease;
+  color: #ffffff;
+  transition: 0.2s ease;
 }
 
 .menu-action-button:hover {
