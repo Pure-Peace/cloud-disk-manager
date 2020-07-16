@@ -1,5 +1,6 @@
 <template>
   <div
+    v-if="file"
     :class="fileItemClass"
     :title="file.path"
     @click="emitFileClick"
@@ -17,8 +18,23 @@
         class="file-self-box"
         style="width: calc(100% - 280px); min-width: 260px;"
       >
-        <div class="file-name">
+        <div
+          v-show="!renaming"
+          class="file-name"
+        >
           {{ file.name }}
+        </div>
+        <div
+          v-show="renaming"
+          class="file-name"
+        >
+          <input
+            ref="fileNameInput"
+            class="file-name-input"
+            :value="file.name"
+            @blur.prevent="renaming = false"
+            @keypress.enter="renaming = false"
+          >
         </div>
         <div class="file-info-box">
           <div class="file-info">
@@ -71,10 +87,27 @@ export default {
       default: 0
     }
   },
+  data () {
+    return {
+      renaming: false
+    }
+  },
   computed: {
     // 列表项目样式，含过滤器
     fileItemClass () {
       return 'file-item' + (this.show === true ? '' : ' file-filted') + (this.file.selected === true ? ' file-selected' : '')
+    }
+  },
+  watch: {
+    renaming (val) {
+      if (val === true) {
+        this.$nextTick(() => {
+          this.$refs.fileNameInput.focus()
+        })
+      } else {
+        const targetName = this.$refs.fileNameInput.value.trim()
+        if (targetName !== this.file.name) this.file.rename(targetName)
+      }
     }
   },
 
@@ -133,15 +166,28 @@ export default {
         },
         {
           label: `复制${file.isDir ? '目录' : '文件'}名`,
-          divided: true,
           onClick: () => {
             this.$bus.clipboard.writeText(file.name)
           }
         },
         {
           label: '复制完整信息（JSON）',
+          divided: true,
           onClick: () => {
             this.$bus.clipboard.writeText(file.getInfo())
+          }
+        },
+        {
+          label: '重命名',
+          onClick: () => {
+            this.renaming = true
+          }
+        },
+        {
+          label: '删除',
+          onClick: () => {
+            this.file.remove()
+            this.$emit('fileRemoved', file)
           }
         }
       ]
@@ -272,4 +318,27 @@ export default {
   color: #000000;
   margin-left: 8px;
 }
+
+.file-name-input {
+  display: block;
+  height: 100%;
+  width: 100%;
+  max-width: 500px;
+  min-height: 26px;
+  border: 2px solid #f1f1f1;
+  padding: 0 10px;
+  transition: 0.2s ease;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #303F9F;
+}
+
+.file-name-input:hover {
+  border-color: #7a94ff;
+}
+
+.file-name-input:focus {
+  border-color: #7a94ff;
+}
+
 </style>

@@ -36,6 +36,7 @@
               @handleSelect="(file, handle)=>handleSelectFile(file, handle)"
               @fileDoubleClick="handleFileDoubleClick"
               @fileClick="handleFileClick"
+              @fileRemoved="(removedFile)=>fileRemoved(removedFile, idx)"
             />
             <empty-status
               :show="listingDir === 2 && visibleFileList.length === 0"
@@ -240,6 +241,17 @@ export default {
     this.initialCurrentDir()
   },
   methods: {
+    // 文件被移除时触发
+    fileRemoved (removedFile, idxInVisibleList) {
+      this.handleRefreshFolder()
+      /*
+      if (idxInVisibleList) delete (this.visibleFileList[idxInVisibleList])
+      const idxInFileList = this.fileList.findIndex(file => file === removedFile)
+      if (idxInFileList !== -1) delete (this.fileList[idxInFileList])
+      */
+      log('file', removedFile, 'has been removed from list')
+    },
+
     // 文件搜索
     handleSearchFile (searchOptions) {
       const searchResutlList = []
