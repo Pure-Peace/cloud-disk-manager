@@ -141,7 +141,7 @@
                 >
                   <div>大小:</div>
                   <div>
-                    {{ file.size ? file.sizeFormatted : '-' }}
+                    {{ file.isDir ? '-' : file.sizeFormatted }}
                   </div>
                 </div>
                 <div class="file-detail-item">
@@ -308,7 +308,7 @@
               <div class="file-detail-item">
                 <div>大小:</div>
                 <div>
-                  {{ file.size ? file.sizeFormatted : '-' }}
+                  {{ file.isDir ? '-' : file.sizeFormatted }}
                 </div>
               </div>
 

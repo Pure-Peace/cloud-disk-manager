@@ -50,6 +50,9 @@ export default {
             let error = 0
 
             try {
+              // 无此路径则抛错
+              if (!fs.pathExistsSync(dirPath)) throw new Error('no such file or directory')
+
               // 异步非阻塞取出目标目录下所有文件，并获取所有文件的详细信息，等待全部完成后返回
               const files = fs.readdirSync(dirPath)
               const fileList = await Promise.all(
