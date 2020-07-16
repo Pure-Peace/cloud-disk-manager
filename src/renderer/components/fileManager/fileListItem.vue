@@ -113,11 +113,11 @@ export default {
 
   methods: {
     emitFileClick () {
-      this.$emit('fileClick', this.file)
+      this.$emit('fileClick')
     },
 
     emitFileDoubleClick () {
-      this.$emit('fileDoubleClick', this.file)
+      this.$emit('fileDoubleClick')
     },
 
     // 文件项目右键单击上下文菜单
@@ -133,7 +133,7 @@ export default {
           label: '添加到选择' + (!file.selected ? '（CTRL + 鼠标左键）' : ''),
           disabled: file.selected,
           onClick: () => {
-            this.$emit('handleSelect', file, 'addselect')
+            this.$emit('handleSelect', 'addselect')
           }
         },
         {
@@ -141,7 +141,7 @@ export default {
           disabled: !file.selected,
           divided: true,
           onClick: () => {
-            this.$emit('handleSelect', file, 'unselect')
+            this.$emit('handleSelect', 'unselect')
           }
         },
         {
@@ -149,7 +149,7 @@ export default {
           divided: true,
           disabled: this.selectedCount === 0,
           onClick: () => {
-            this.$emit('handleSelect', file, 'unselectAll')
+            this.$emit('handleSelect', 'unselectAll')
           }
         },
         {
@@ -178,6 +178,33 @@ export default {
           }
         },
         {
+          label: '粘贴',
+          divided: true,
+          onClick: () => {
+            console.log(this.$parent)
+            this.$emit('handlePaste')
+          }
+        },
+        {
+          label: '复制',
+          onClick: () => {
+            this.$emit('handleCopy')
+          }
+        },
+        {
+          label: '剪切',
+          onClick: () => {
+            this.$emit('handleCut')
+          }
+        },
+        {
+          label: '移动',
+          divided: true,
+          onClick: () => {
+            this.$emit('handleMove')
+          }
+        },
+        {
           label: '重命名',
           onClick: () => {
             this.renaming = true
@@ -186,8 +213,8 @@ export default {
         {
           label: '删除',
           onClick: () => {
-            this.file.remove()
-            this.$emit('fileRemoved', file)
+            file.remove()
+            this.$emit('fileRemoved')
           }
         }
       ]

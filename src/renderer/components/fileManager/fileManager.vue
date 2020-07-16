@@ -33,10 +33,14 @@
               :file="file"
               :show="!(filters[file.ext] && filters[file.ext].status === false)"
               :selected-count="selectedFiles.length"
-              @handleSelect="(file, handle)=>handleSelectFile(file, handle)"
-              @fileDoubleClick="handleFileDoubleClick"
-              @fileClick="handleFileClick"
-              @fileRemoved="(removedFile)=>fileRemoved(removedFile, idx)"
+              @handleSelect="(handle)=>handleSelectFile(file, handle)"
+              @fileDoubleClick="handleFileDoubleClick(file)"
+              @fileClick="handleFileClick(file)"
+              @filePaste="handleFilePaste(file)"
+              @fileRemoved="fileRemoved(file, idx)"
+              @handleCopy="handleCopy(file)"
+              @handleCut="handleCut(file)"
+              @handleMove="handleMove(file)"
             />
             <empty-status
               :show="listingDir === 2 && visibleFileList.length === 0"
@@ -241,6 +245,19 @@ export default {
     this.initialCurrentDir()
   },
   methods: {
+    handleFilePaste (file) {
+
+    },
+
+    handleCopy (file) {
+
+    },
+    handleCut (file) {
+
+    },
+    handleMove (file) {
+
+    },
     // 文件被移除时触发
     fileRemoved (removedFile, idxInVisibleList) {
       this.handleRefreshFolder()
@@ -372,9 +389,9 @@ export default {
     },
 
     // 文件双击事件
-    handleFileDoubleClick (file, idx) {
+    handleFileDoubleClick (file) {
       if (file.isDir) this.currentDir = file.path
-      log(idx, file, file.name, 'onDoubleClicked')
+      log(file, file.name, 'onDoubleClicked')
     },
 
     // 文件单击事件
