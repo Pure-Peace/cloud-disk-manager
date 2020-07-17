@@ -59,19 +59,7 @@ const install = (Vue, options) => {
           modalType: 'appAbout'
         }
         ],
-        serviceList: [{
-          name: 'ftp',
-          title: 'FTP'
-        },
-        {
-          name: 'smb',
-          title: 'SMB'
-        },
-        {
-          name: 'baiduyun',
-          title: '百度网盘'
-        }
-        ],
+
         // 虚拟滚动条默认设置
         scrollBarOptions: () => {
           return {
@@ -101,7 +89,8 @@ const install = (Vue, options) => {
               keepShow: false
             }
           }
-        }
+        },
+        ftpClients: []
       }
     },
     created () {
@@ -109,6 +98,7 @@ const install = (Vue, options) => {
       this.eventsInitial()
     },
     methods: {
+
       // 初始化mainprocess的相关方法及变量
       objectsInitial () {
         const appManager = this.getAppManager()

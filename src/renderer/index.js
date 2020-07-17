@@ -19,10 +19,13 @@ import backend from 'backend/resources'
 import Contextmenu from 'components/contextmenu/'
 import SvgIcon from 'components/svgIcon/index.vue'
 import iconList from 'components/svgIcon'
+import customModal from 'components/customModal.vue'
+import ElementUI from 'element-ui'
 
 // theme styles
 import 'themes/global.less'
 import 'themes/light.less'
+import 'themes/element.scss'
 
 // subservice
 const subservices = {
@@ -64,7 +67,13 @@ Vue.use(VModal)
 Vue.use(vuescroll)
 Vue.use(VueBus, { router })
 Vue.use(Contextmenu)
+
+// element ------
+Vue.use(ElementUI, { size: 'small' })
+
+// custom components ------
 Vue.component('svg-icon', SvgIcon)
+Vue.component('custom-modal', customModal)
 
 // prototype ------
 Vue.prototype.$backend = backend

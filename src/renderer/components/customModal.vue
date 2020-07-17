@@ -2,6 +2,7 @@
   <modal
     :adaptive="true"
     :name="name"
+    :click-to-close="clickToClose"
     @before-open="handleBeforeOpen"
     @before-close="handleBeforeClose"
   >
@@ -16,16 +17,19 @@
         <svg-icon icon-class="exit" />
       </button>
     </div>
-    <app-about v-if="type === 'appAbout'" />
+    <app-about v-show="type === 'appAbout'" />
+    <add-ftp v-show="type === 'addFtp'" />
   </modal>
 </template>
 
 <script>
 import appAbout from 'components/modalContents/appAbout.vue'
+import addFtp from 'components/modalContents/addFtp.vue'
 
 export default {
   components: {
-    appAbout
+    appAbout,
+    addFtp
   },
   props: {
     content: {
@@ -35,6 +39,10 @@ export default {
     name: {
       default: '',
       type: String
+    },
+    clickToClose: {
+      default: true,
+      type: Boolean
     }
   },
   data () {

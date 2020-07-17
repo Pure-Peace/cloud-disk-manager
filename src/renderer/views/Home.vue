@@ -1,6 +1,11 @@
 <template>
   <div style="display: flex; flex-direction: row;">
-    <div style="border-radius: 8px 0 0 0; background-color: #F1F2F6; height: 100%; width: 230px;">
+    <!--custom-modal
+      :click-to-close="true"
+      name="home-modal"
+    /-->
+
+    <div style="border-radius: 8px 0 0 0; background-color: #F1F2F6; height: 100%; width: 240px;">
       <div
         style="border-radius: 8px 0 0 0; font-size: 20px; padding: 20px; color: #292929; user-select: none;"
       >
@@ -10,14 +15,15 @@
       <div />
     </div>
     <div style="flex: 1; padding: 20px;">
-      <div style="text-align: center; font-size: 26px; font-weight: lighter; padding: 20px;">
+      <div style="text-align: center; font-size: 26px; font-weight: lighter; padding: 20px; ">
         请选择一个服务
       </div>
       <div class="service-box">
         <service-item
-          v-for="(item, idx) in $bus.serviceList"
+          v-for="(item, idx) in serviceList"
           :key="idx"
           :service="item"
+          @click="item.handler"
         />
       </div>
     </div>
@@ -34,11 +40,32 @@ export default {
     serviceItem
   },
   data () {
-    return {}
+    return {
+
+      serviceList: [{
+        name: 'ftp',
+        title: 'FTP',
+        handler: () => {
+          this.$router.push({ name: 'Ftp' })
+        }
+      },
+      {
+        name: 'smb',
+        title: 'SMB',
+        handler: () => {}
+      },
+      {
+        name: 'baiduyun',
+        title: '百度网盘',
+        handler: () => {}
+      }
+      ]
+    }
   },
   mounted () {
   },
   methods: {
+
     openDialogByRemote () {
       const { dialog } = require('electron').remote
       dialog.showMessageBox({

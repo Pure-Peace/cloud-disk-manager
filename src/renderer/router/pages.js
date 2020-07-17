@@ -2,6 +2,7 @@ import Home from 'views/Home.vue'
 import Settings from 'views/Settings.vue'
 import Tasks from 'views/Tasks.vue'
 import Dir from 'views/Dir.vue'
+import Ftp from 'views/Ftp.vue'
 
 export default [
   {
@@ -26,5 +27,10 @@ export default [
     path: '/Tasks',
     name: 'Tasks',
     component: Tasks
+  },
+  {
+    path: '/Ftp',
+    name: 'Ftp',
+    component: Ftp
   }
 ]

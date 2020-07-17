@@ -11,13 +11,14 @@
     >
       <leftbar ref="leftbar" />
 
-      <!--keep-alive>
+      <keep-alive>
         <router-view
           v-if="$route.meta.keepAlive"
           id="app-router-view"
         />
-      </keep-alive-->
+      </keep-alive>
       <router-view
+        v-if="!$route.meta.keepAlive"
         id="app-router-view"
       />
 
@@ -27,7 +28,6 @@
 </template>
 
 <script>
-import customModal from 'components/customModal.vue'
 import topbar from 'layouts/topbar.vue'
 import leftbar from 'layouts/leftbar.vue'
 // import localeChanger from 'components/localeChanger'
@@ -36,8 +36,7 @@ export default {
   components: {
     // localeChanger,
     topbar,
-    leftbar,
-    customModal
+    leftbar
   },
   data () {
     return {
