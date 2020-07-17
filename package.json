@@ -1,6 +1,6 @@
 {
   "name": "cloud-disk-manager",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
