@@ -71,5 +71,16 @@ module.exports = {
       localeDir: 'locales',
       enableInSFC: false
     }
+  },
+  configureWebpack: {
+    module: {
+      rules: [
+        // to fix .node file load problem on macOS
+        {
+          test: /\.node$/,
+          loader: 'node-loader'
+        }
+      ]
+    }
   }
 }
